@@ -12,10 +12,10 @@ const char * operator_type_str[] = {
 };
 
 void add_statement(
-	code_file_t * file,
+	code_block_t * code_block,
 	statement_t * statement)
 {
-	statement_t * next_stmt = file->first_line;
+	statement_t * next_stmt = code_block->first_line;
 	while (NULL != next_stmt->next)
 	{
 		next_stmt = next_stmt->next;
@@ -74,11 +74,19 @@ void debug_declaration(statement_t * declaration, int offset)
 	printf("\n%*sDeclaration identifier: %s\n", offset * debug_shift_width, "", decl.identifier);
 }
 
+void debug_ifelse(statement_ifelse_t * ifelse, int offset)
+{
+	printf("%*sIF\n", offset * debug_shift_width, "");
+	debug_expression(ifelse->if_expr, offset + 1);
+	printf("%*sTHEN\n", offset * debug_shift_width, "");
+	printf("%*sELSE\n", offset * debug_shift_width, "");
+}
+
 void debug_ast(
 	code_file_t * code_file)
 {
 	statement_t * statement = NULL;
-	statement = code_file->first_line;
+	statement = code_file->first_block->first_line;
 	while (NULL != statement)
 	{
 		printf("Statement type: ");
@@ -91,6 +99,10 @@ void debug_ast(
 			case EXPRESSION:
 				printf("expression\n");
 				debug_expression(&(statement->expression), 1);
+				break;
+			case IFELSE:
+				printf("ifelse block\n");
+				debug_ifelse(&(statement->ifelse), 1);
 				break;
 		}
 		statement = statement->next;

@@ -4,7 +4,7 @@ YACC=yacc -vd
 CC=gcc
 
 amircc: y.tab.o lex.yy.o symbol_table.o ast.o
-	$(CC) -o amircc y.tab.o lex.yy.o symbol_table.o ast_nodes.o ast.o -lfl
+	$(CC) -o amircc y.tab.o lex.yy.o symbol_table.o ast_nodes.o ast_flow.o ast.o -lfl
 
 
 symbol_table.o: symbol_table.c
@@ -13,14 +13,16 @@ symbol_table.o: symbol_table.c
 ast_nodes.o: ast_nodes.c
 	$(CC) -c -o $@ $<
 
+ast_flow.o: ast_flow.c
+	$(CC) -c -o $@ $<
+
 ast.o: ast.c
 	$(CC) -c -o $@ $<
 	
 lex.yy.o: lex.yy.c y.tab.h
-lex.yy.o y.tab.o: amircc.h
+lex.yy.o y.tab.o:
 
-
-y.tab.c y.tab.h: parser.y symbol_table.o ast_nodes.o ast.o
+y.tab.c y.tab.h: parser.y symbol_table.o ast_nodes.o ast_flow.o ast.o
 	$(YACC) parser.y
 
 lex.yy.c: tokenizer.lex
