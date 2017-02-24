@@ -65,6 +65,7 @@ declaration_type_e declaration_type;
 %start file
 %token TOK_CHAR TOK_INT TOK_LONG
 %token TOK_IF TOK_ELSE
+%token TOK_EQUAL TOK_OP_OR TOK_OP_AND
 %token <long_value> TOK_NUMBER
 %token <identifier_name> TOK_IDENTIFIER
 
@@ -77,11 +78,13 @@ declaration_type_e declaration_type;
 %type <declaration_type> declaration_type
 
 %right '='
-%left "||"
-%left "&&"
+%left TOK_OP_OR
+%left TOK_OR_AND
 %left '|'
 %left '^'
 %left '&'
+%left TOK_EQUAL
+%left TOK_NEQUAL
 %left '+' '-'
 %left '*' '/'
 
@@ -114,11 +117,13 @@ expr : TOK_NUMBER { $$ = create_const_expression($1); }
      | TOK_IDENTIFIER { lookup_symbol($1);
 		        $$ = create_identifier_expression($1); }
      | expr '=' expr { $$ = create_op_expression(OP_ASSIGN, $1, $3, NULL); }
-     | expr "||" expr { $$ = create_op_expression(OP_OR, $1, $3, NULL); }
-     | expr "&&" expr { $$ = create_op_expression(OP_AND, $1, $3, NULL); }
+     | expr TOK_OP_OR expr { $$ = create_op_expression(OP_OR, $1, $3, NULL); }
+     | expr TOK_OP_AND expr { $$ = create_op_expression(OP_AND, $1, $3, NULL); }
      | expr '|' expr { $$ = create_op_expression(OP_BOR, $1, $3, NULL); }
      | expr '^' expr { $$ = create_op_expression(OP_BXOR, $1, $3, NULL); }
      | expr '&' expr { $$ = create_op_expression(OP_BAND, $1, $3, NULL); }
+     | expr TOK_EQUAL expr { $$ = create_op_expression(OP_EQUAL, $1, $3, NULL); }
+     | expr TOK_NEQUAL expr { $$ = create_op_expression(OP_NEQUAL, $1, $3, NULL); }
      | expr '+' expr { $$ = create_op_expression(OP_ADD, $1, $3, NULL); }
      | expr '-' expr { $$ = create_op_expression(OP_SUB, $1, $3, NULL); }
      | expr '*' expr { $$ = create_op_expression(OP_MUL, $1, $3, NULL); }

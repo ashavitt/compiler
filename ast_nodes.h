@@ -25,7 +25,9 @@ typedef enum operator_type
 	OP_OR,
 	OP_ASSIGN,
 	OP_PLUS,
-	OP_NEG
+	OP_NEG,
+	OP_EQUAL,
+	OP_NEQUAL
 } operator_type_e;
 
 struct expression_op

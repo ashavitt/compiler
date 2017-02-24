@@ -20,5 +20,11 @@ else			{return TOK_ELSE;}
 	yylval.long_value = strtol(yytext, NULL, 0);
 	return TOK_NUMBER;}
 [ \t\r\n]+	
+
+==			{ return TOK_EQUAL; }
+!=			{ return TOK_NEQUAL; }
+\|\|			{ return TOK_OP_OR; }
+&&			{ return TOK_OP_AND; }
+
 .			{return yytext[0];}
 %%
