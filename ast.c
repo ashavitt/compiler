@@ -124,32 +124,43 @@ void debug_ifelse(statement_ifelse_t * ifelse, int offset)
 	printf("%*sIF\n", offset * debug_shift_width, "");
 	debug_expression(ifelse->if_expr, offset + 1);
 	printf("%*sTHEN\n", offset * debug_shift_width, "");
-	printf("%*sELSE\n", offset * debug_shift_width, "");
+	debug_code_block(ifelse->if_block, offset + 1);
+	if (ifelse->else_block != NULL)
+	{
+		printf("%*sELSE\n", offset * debug_shift_width, "");
+		debug_code_block(ifelse->else_block, offset + 1);
+	}
+}
+
+void debug_code_block(
+	code_block_t * code_block, int offset)
+{
+	statement_t * statement = NULL;
+	statement = code_block->first_line;
+	while (NULL != statement)
+	{
+		printf("%*sStatement type: ", offset * debug_shift_width, "");
+		switch(statement->statement_type)
+		{
+			case DECLARATION:
+				printf("declaration\n");
+				debug_declaration(statement, offset + 1);
+				break;
+			case EXPRESSION:
+				printf("expression\n");
+				debug_expression(&(statement->expression), offset + 1);
+				break;
+			case IFELSE:
+				printf("ifelse block\n");
+				debug_ifelse(&(statement->ifelse), offset + 1);
+				break;
+		}
+		statement = statement->next;
+	}
 }
 
 void debug_ast(
 	code_file_t * code_file)
 {
-	statement_t * statement = NULL;
-	statement = code_file->first_block->first_line;
-	while (NULL != statement)
-	{
-		printf("Statement type: ");
-		switch(statement->statement_type)
-		{
-			case DECLARATION:
-				printf("declaration\n");
-				debug_declaration(statement, 1);
-				break;
-			case EXPRESSION:
-				printf("expression\n");
-				debug_expression(&(statement->expression), 1);
-				break;
-			case IFELSE:
-				printf("ifelse block\n");
-				debug_ifelse(&(statement->ifelse), 1);
-				break;
-		}
-		statement = statement->next;
-	}
+	debug_code_block(code_file->first_block, 0);
 }
