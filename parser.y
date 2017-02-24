@@ -101,21 +101,9 @@ lines : statement { code_block_t * code_block = malloc(sizeof(code_block_t));
 			  $$ = $1; }
       ;
 
-statement : expr ';' { statement_t * stmt = malloc(sizeof(statement_t));
-	  	       stmt->statement_type = EXPRESSION;
-		       stmt->expression = *$1;
-		       stmt->next = NULL;
-		       $$ = stmt; }
-	  | declaration ';' { statement_t * stmt = malloc(sizeof(statement_t));
-			      stmt->statement_type = DECLARATION;
-			      stmt->declaration = *$1;
-			      stmt->next = NULL;
-			      $$ = stmt; }
-	  | ifelse { statement_t * stmt = malloc(sizeof(statement_t));
-					stmt->statement_type = IFELSE;
-					stmt->ifelse = *$1;
-					stmt->next = NULL;
-					$$ = stmt; }
+statement : expr ';' { $$ = create_statement_expression($1); }
+	  | declaration ';' { $$ = create_statement_declaration($1); }
+	  | ifelse { $$ = create_statement_ifelse($1); }
 	  ;
 
 ifelse : TOK_IF '(' expr ')' block TOK_ELSE block { $$ = create_ifelse_statement($3, $5, $7); }

@@ -35,6 +35,9 @@ typedef struct code_file
 	code_block_t * first_block;
 } code_file_t;
 
+statement_t * create_statement_expression(statement_expression_t * expr);
+statement_t * create_statement_declaration(statement_declaration_t * decl);
+statement_t * create_statement_ifelse(statement_ifelse_t * ifelse);
 void add_statement(code_block_t * file, statement_t * statement);
 void debug_ast(code_file_t * code_file);
 

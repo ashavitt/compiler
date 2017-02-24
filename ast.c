@@ -11,6 +11,51 @@ const char * operator_type_str[] = {
 	"assignment", "unary plus", "unary minus"
 };
 
+statement_t * create_statement(statement_type_e type)
+{
+	statement_t * stmt = (statement_t *) malloc (sizeof(statement_t));
+	if (NULL == stmt)
+	{
+		return NULL;
+	}
+	stmt->statement_type = type;
+	stmt->next = NULL;
+	return stmt;
+}
+
+statement_t * create_statement_expression(statement_expression_t * expr)
+{
+	statement_t * stmt = create_statement(EXPRESSION);
+	if (NULL == stmt)
+	{
+		return NULL;
+	}
+	stmt->expression = *expr;
+	return stmt;
+}
+
+statement_t * create_statement_declaration(statement_declaration_t * decl)
+{
+	statement_t * stmt = create_statement(DECLARATION);
+	if (NULL == stmt)
+	{
+		return NULL;
+	}
+	stmt->declaration = *decl;
+	return stmt;
+}
+
+statement_t * create_statement_ifelse(statement_ifelse_t * ifelse)
+{
+	statement_t * stmt = create_statement(IFELSE);
+	if (NULL == stmt)
+	{
+		return NULL;
+	}
+	stmt->ifelse = *ifelse;
+	return stmt;
+}
+
 void add_statement(
 	code_block_t * code_block,
 	statement_t * statement)
