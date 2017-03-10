@@ -1,6 +1,8 @@
 #ifndef __AST_FLOW_H__
 #define __AST_FLOW_H__
 
+/* Structs and functions regarding control flow in C */
+
 typedef struct statement_ifelse statement_ifelse_t;
 
 struct statement_ifelse

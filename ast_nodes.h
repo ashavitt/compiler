@@ -1,6 +1,8 @@
 #ifndef __AST_NODES_H__
 #define __AST_NODES_H__
 
+/* Structs and functions regarding the operations in C without flow control */
+
 typedef struct expression_op expression_op_t;
 typedef struct statement_expression statement_expression_t;
 
