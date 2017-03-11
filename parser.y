@@ -8,6 +8,7 @@
 #include <stdio.h>
 #include <symbol_table.h>
 #include <ast.h>
+#include <x86/gen_asm.h>
 
 static int errors = 0;
 static int yydebug = 0;
@@ -155,7 +156,11 @@ int main(int argc, char * argv[])
 	errors = 0;
 	yyparse(&code_file);
 	debug_ast(&code_file);
-	return 0;
+	printf("ASSEMBLY:\n");
+    gen_asm_x86(&code_file, 1);
+    printf("\n");
+    fflush(stdout);
+    return 0;
 }
 
 void yyerror(code_file_t * code_file, const char * s)

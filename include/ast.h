@@ -8,9 +8,9 @@ typedef struct code_block code_block_t;
 
 typedef enum statement_type
 {
-	DECLARATION,
-	EXPRESSION,
-	IFELSE
+	STATEMENT_TYPE_DECLARATION,
+	STATEMENT_TYPE_EXPRESSION,
+	STATEMENT_TYPE_IFELSE
 } statement_type_e;
 
 typedef struct statement

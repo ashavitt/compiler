@@ -8,9 +8,9 @@ typedef struct statement_expression statement_expression_t;
 
 typedef enum expression_type
 {
-	EXP_OP,
-	EXP_CONST,
-	EXP_IDENTIFIER
+	EXPRESSION_TYPE_OP,
+	EXPRESSION_TYPE_CONST,
+	EXPRESSION_TYPE_IDENTIFIER
 } expression_type_e;
 
 typedef enum operator_type

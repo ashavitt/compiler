@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.0)
 project(compiler)
 
+set(CMAKE_C_STANDARD 11)
+
 file(MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/lex ${CMAKE_BINARY_DIR}/yacc)
 
 set(SOURCE_FILES
@@ -10,6 +12,7 @@ set(SOURCE_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/ast_flow.c
     ${CMAKE_CURRENT_SOURCE_DIR}/ast_nodes.c
     ${CMAKE_CURRENT_SOURCE_DIR}/symbol_table.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/x86/gen_asm.c
 )
 
 include_directories(${CMAKE_BINARY_DIR}/lex ${CMAKE_BINARY_DIR}/yacc ${CMAKE_SOURCE_DIR}/include)

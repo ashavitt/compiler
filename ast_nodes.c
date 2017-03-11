@@ -17,7 +17,7 @@ statement_expression_t * create_op_expression(
 		goto cleanup;
 	}
 
-	new_stmt->type = EXP_OP;
+	new_stmt->type = EXPRESSION_TYPE_OP;
 	new_stmt->exp_op.op = op;
 	new_stmt->exp_op.exp1 = exp1;
 	new_stmt->exp_op.exp2 = exp2;
@@ -44,7 +44,7 @@ statement_expression_t * create_const_expression(
 		goto cleanup;
 	}
 
-	new_stmt->type = EXP_CONST;
+	new_stmt->type = EXPRESSION_TYPE_CONST;
 	new_stmt->constant = value;
 
 	return new_stmt;
@@ -78,7 +78,7 @@ statement_expression_t * create_identifier_expression(
 
 	strncpy(identifier_copy, identifier, identifier_len);
 
-	new_stmt->type = EXP_IDENTIFIER;
+	new_stmt->type = EXPRESSION_TYPE_IDENTIFIER;
 	new_stmt->identifier = identifier_copy;
 
 	return new_stmt;

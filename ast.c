@@ -25,7 +25,7 @@ statement_t * create_statement(statement_type_e type)
 
 statement_t * create_statement_expression(statement_expression_t * expr)
 {
-	statement_t * stmt = create_statement(EXPRESSION);
+	statement_t * stmt = create_statement(STATEMENT_TYPE_EXPRESSION);
 	if (NULL == stmt)
 	{
 		return NULL;
@@ -36,7 +36,7 @@ statement_t * create_statement_expression(statement_expression_t * expr)
 
 statement_t * create_statement_declaration(statement_declaration_t * decl)
 {
-	statement_t * stmt = create_statement(DECLARATION);
+	statement_t * stmt = create_statement(STATEMENT_TYPE_DECLARATION);
 	if (NULL == stmt)
 	{
 		return NULL;
@@ -47,7 +47,7 @@ statement_t * create_statement_declaration(statement_declaration_t * decl)
 
 statement_t * create_statement_ifelse(statement_ifelse_t * ifelse)
 {
-	statement_t * stmt = create_statement(IFELSE);
+	statement_t * stmt = create_statement(STATEMENT_TYPE_IFELSE);
 	if (NULL == stmt)
 	{
 		return NULL;
@@ -73,7 +73,7 @@ void debug_expression(statement_expression_t * expr, int offset)
 	printf("%*sExpression type: ", offset * debug_shift_width, "");
 	switch (expr->type)
 	{
-		case EXP_OP:
+		case EXPRESSION_TYPE_OP:
 			printf("operator\n");
 			printf("%*soperator: %s\n", (offset + 1) * debug_shift_width, "", operator_type_str[expr->exp_op.op]);
 			if (NULL != expr->exp_op.exp1)
@@ -89,11 +89,11 @@ void debug_expression(statement_expression_t * expr, int offset)
 				debug_expression(expr->exp_op.exp3, offset + 2);
 			}
 			break;
-		case EXP_CONST:
+		case EXPRESSION_TYPE_CONST:
 			printf("constant\n");
 			printf("%*s%ld\n", (offset + 1) * debug_shift_width, "", expr->constant);
 			break;
-		case EXP_IDENTIFIER:
+		case EXPRESSION_TYPE_IDENTIFIER:
 			printf("identifier\n");
 			printf("%*s%s\n", (offset + 1) * debug_shift_width, "", expr->identifier);
 			break;
@@ -142,15 +142,15 @@ void debug_code_block(
 		printf("%*sStatement type: ", offset * debug_shift_width, "");
 		switch(statement->statement_type)
 		{
-			case DECLARATION:
+			case STATEMENT_TYPE_DECLARATION:
 				printf("declaration\n");
 				debug_declaration(statement, offset + 1);
 				break;
-			case EXPRESSION:
+			case STATEMENT_TYPE_EXPRESSION:
 				printf("expression\n");
 				debug_expression(&(statement->expression), offset + 1);
 				break;
-			case IFELSE:
+			case STATEMENT_TYPE_IFELSE:
 				printf("ifelse block\n");
 				debug_ifelse(&(statement->ifelse), offset + 1);
 				break;
