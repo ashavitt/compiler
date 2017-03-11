@@ -5,6 +5,19 @@
 #include <unistd.h>
 #include <stdio.h>
 
+void add_instruction_to_closure(asm_node_t * node, closure_t * closure) {
+    asm_node_t * current_instruction = closure->instructions;
+
+    if (current_instruction == NULL) {
+        closure->instructions = node;
+    } else {
+        while (current_instruction->next != NULL) {
+            current_instruction = current_instruction->next;
+        }
+        current_instruction->next = node;
+    }
+}
+
 long get_variable_stack_offset(closure_t * closure, char * identifier) {
     variable_t * current_variable = closure->variables;
     while (current_variable != NULL) {
@@ -18,8 +31,16 @@ long get_variable_stack_offset(closure_t * closure, char * identifier) {
     return 0;
 }
 
-bool generate_assignment(expression_op_t * assignment, closure_t * closure) {
+bool generate_addition(expression_op_t * assignment, closure_t * closure) {
     asm_node_t * current_instruction = closure->instructions;
+    asm_node_t * node = malloc(sizeof(*node));
+    if (NULL == node) {
+        return false;
+    }
+
+}
+
+bool generate_assignment(expression_op_t * assignment, closure_t * closure) {
     asm_node_t * node = malloc(sizeof(*node));
     if (NULL == node) {
         return false;
@@ -29,21 +50,13 @@ bool generate_assignment(expression_op_t * assignment, closure_t * closure) {
     if (assignment->exp1->type == EXPRESSION_TYPE_IDENTIFIER && assignment->exp2->type == EXPRESSION_TYPE_CONST) {
         node->next = NULL;
         node->opcode = OPCODE_MOV;
-        node->operand1.type = OPERAND_TYPE_STACK;
+        node->operand1.type = OPERAND_TYPE_STACK_DWORD;
         node->operand1.stack_offset = get_variable_stack_offset(closure, assignment->exp1->identifier);
         node->operand2.type = OPERAND_TYPE_SIGNED_DWORD_CONST;
         /* TODO: add overflow checks */
         node->operand2.signed_dword = (int32_t)assignment->exp2->constant;
 
-        /* add the instruction to the end of the list */
-        if (current_instruction == NULL) {
-            closure->instructions = node;
-        } else {
-            while (current_instruction->next != NULL) {
-                current_instruction = current_instruction->next;
-            }
-            current_instruction->next = node;
-        }
+        add_instruction_to_closure(node, closure);
     } else {
         return false;
     }
@@ -55,6 +68,8 @@ bool generate_operation(statement_expression_t * expression, closure_t * closure
     switch (expression->exp_op.op) {
         case OP_ASSIGN:
             return generate_assignment(&expression->exp_op, closure);
+        case OP_ADD:
+            return generate_addition(&expression->exp_op, closure);
         default:
             return false;
     }
@@ -130,8 +145,18 @@ static char * instruction_to_text[] = {
 bool print_operand(operand_e * operand, char * instruction_text, size_t instruction_text_size) {
     char operand_text[256] = {0};
     switch(operand->type) {
-        case OPERAND_TYPE_STACK:
-            strncat(instruction_text, "[ebp", instruction_text_size);
+        case OPERAND_TYPE_STACK_DWORD:
+            if (operand->type == OPERAND_TYPE_STACK_DWORD) {
+                strncat(instruction_text, "dword ptr [ebp", instruction_text_size);
+            }
+        case OPERAND_TYPE_STACK_WORD:
+            if (operand->type == OPERAND_TYPE_STACK_WORD) {
+                strncat(instruction_text, "word ptr [ebp", instruction_text_size);
+            }
+        case OPERAND_TYPE_STACK_BYTE:
+            if (operand->type == OPERAND_TYPE_STACK_BYTE) {
+                strncat(instruction_text, "byte ptr [ebp", instruction_text_size);
+            }
             if (operand->stack_offset < 0) {
                 snprintf(operand_text, sizeof(operand_text), "-0x%lx", -operand->stack_offset);
             }
