@@ -33,6 +33,7 @@ variable_t * lookup_expression_result(statement_expression_t * expression, closu
     return NULL;
 }
 
+
 long get_variable_stack_offset(closure_t * closure, char * identifier) {
     variable_t * current_variable = closure->variables;
     while (current_variable != NULL) {
@@ -171,7 +172,19 @@ bool parse_block(code_block_t * code_block, closure_t * closure)
 }
 
 static char * instruction_to_text[] = {
-    "mov"
+        "mov",
+        "add",
+        "sub",
+        "mul",
+        "div",
+        "jmp"
+};
+
+static char * register_to_text[] = {
+        "eax",
+        "ebx",
+        "ecx",
+        "edx"
 };
 
 /* TODO: add error handling in this file */
@@ -205,12 +218,33 @@ bool print_operand(operand_e * operand, char * instruction_text, size_t instruct
             snprintf(operand_text, sizeof(operand_text), "%d", operand->signed_dword);
             strncat(instruction_text, operand_text, instruction_text_size);
             break;
-
+        case OPERAND_TYPE_UNSIGNED_DWORD_CONST:
+            snprintf(operand_text, sizeof(operand_text), "%ud", operand->unsigned_dword);
+            strncat(instruction_text, operand_text, instruction_text_size);
+            break;
+        case OPERAND_TYPE_SIGNED_WORD_CONST:
+            snprintf(operand_text, sizeof(operand_text), "%d", operand->signed_word);
+            strncat(instruction_text, operand_text, instruction_text_size);
+            break;
+        case OPERAND_TYPE_UNSIGNED_WORD_CONST:
+            snprintf(operand_text, sizeof(operand_text), "%ud", operand->unsigned_word);
+            strncat(instruction_text, operand_text, instruction_text_size);
+            break;
+        case OPERAND_TYPE_SIGNED_BYTE_CONST:
+            snprintf(operand_text, sizeof(operand_text), "%d", operand->signed_byte);
+            strncat(instruction_text, operand_text, instruction_text_size);
+            break;
+        case OPERAND_TYPE_UNSIGNED_BYTE_CONST:
+            snprintf(operand_text, sizeof(operand_text), "%ud", operand->unsigned_byte);
+            strncat(instruction_text, operand_text, instruction_text_size);
+            break;
+        case OPERAND_TYPE_REG:
+            snprintf(operand_text, sizeof(operand_text), "%s", register_to_text[operand->reg]);
+            strncat(instruction_text, operand_text, instruction_text_size);
+            break;
         default:
             return false;
     }
-
-    return true;
 }
 
 bool generate_assembly_instruction(asm_node_t * instruction, char * instruction_text, size_t instruction_text_size) {

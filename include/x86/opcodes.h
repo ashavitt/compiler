@@ -4,7 +4,7 @@
 typedef enum opcode
 {
     OPCODE_MOV,
-	OPCODE_ADD,
+    OPCODE_ADD,
     OPCODE_SUB,
     OPCODE_MUL,
     OPCODE_DIV,
