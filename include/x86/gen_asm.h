@@ -66,6 +66,7 @@ typedef struct variable_s {
     position_t position;
     union {
         char * variable_name;
+        statement_expression_t * expression;
     };
 } variable_t;
 

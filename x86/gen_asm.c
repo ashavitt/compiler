@@ -5,6 +5,8 @@
 #include <unistd.h>
 #include <stdio.h>
 
+bool generate_expression(statement_expression_t * expression, closure_t * closure);
+
 void add_instruction_to_closure(asm_node_t * node, closure_t * closure) {
     asm_node_t * current_instruction = closure->instructions;
 
@@ -16,6 +18,19 @@ void add_instruction_to_closure(asm_node_t * node, closure_t * closure) {
         }
         current_instruction->next = node;
     }
+}
+
+variable_t * lookup_expression_result(statement_expression_t * expression, closure_t * closure) {
+    variable_t * current_variable = closure->variables;
+
+    while (current_variable != NULL) {
+        if (current_variable->type == VALUE_TYPE_EXPRESSION_RESULT && current_variable->expression == expression) {
+            return current_variable;
+        }
+        current_variable = current_variable->next;
+    }
+
+    return NULL;
 }
 
 long get_variable_stack_offset(closure_t * closure, char * identifier) {
@@ -31,16 +46,31 @@ long get_variable_stack_offset(closure_t * closure, char * identifier) {
     return 0;
 }
 
-bool generate_addition(expression_op_t * assignment, closure_t * closure) {
-    asm_node_t * current_instruction = closure->instructions;
+bool generate_addition(statement_expression_t * expression, closure_t * closure) {
+    expression_op_t * addition = &expression->exp_op;
     asm_node_t * node = malloc(sizeof(*node));
     if (NULL == node) {
         return false;
     }
 
+    if (addition->exp1->type == EXPRESSION_TYPE_OP) {
+        if(!generate_expression(addition->exp1, closure)) {
+            return false;
+        }
+    }
+
+    if (addition->exp2->type == EXPRESSION_TYPE_OP) {
+        if(!generate_expression(addition->exp2, closure)) {
+            return false;
+        }
+    }
+
+
+
 }
 
-bool generate_assignment(expression_op_t * assignment, closure_t * closure) {
+bool generate_assignment(statement_expression_t * expression, closure_t * closure) {
+    expression_op_t * assignment = &expression->exp_op;
     asm_node_t * node = malloc(sizeof(*node));
     if (NULL == node) {
         return false;
@@ -67,9 +97,9 @@ bool generate_assignment(expression_op_t * assignment, closure_t * closure) {
 bool generate_operation(statement_expression_t * expression, closure_t * closure) {
     switch (expression->exp_op.op) {
         case OP_ASSIGN:
-            return generate_assignment(&expression->exp_op, closure);
+            return generate_assignment(expression, closure);
         case OP_ADD:
-            return generate_addition(&expression->exp_op, closure);
+            return generate_addition(expression, closure);
         default:
             return false;
     }
@@ -84,8 +114,12 @@ bool generate_expression(statement_expression_t * expression, closure_t * closur
             /* same with const.. */
             break;
         case EXPRESSION_TYPE_OP:
-            return generate_operation(expression, closure);
+            if(!generate_operation(expression, closure)) {
+                return false;
+            }
+            break;
     }
+
     return true;
 }
 
@@ -171,6 +205,7 @@ bool print_operand(operand_e * operand, char * instruction_text, size_t instruct
             snprintf(operand_text, sizeof(operand_text), "%d", operand->signed_dword);
             strncat(instruction_text, operand_text, instruction_text_size);
             break;
+
         default:
             return false;
     }
