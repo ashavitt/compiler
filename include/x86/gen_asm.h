@@ -5,6 +5,7 @@
 #include <ast.h>
 #include <stdint.h>
 #include <stdbool.h>
+#include <stddef.h>
 
 typedef struct asm_node asm_node_t;
 typedef struct code_file_data code_file_data_t;
@@ -64,9 +65,10 @@ typedef struct variable_s {
     struct variable_s * next;
     value_type_e type;
     position_t position;
+    statement_expression_t * evaluated_expression;
+    size_t size;
     union {
         char * variable_name;
-        statement_expression_t * expression;
     };
 } variable_t;
 
