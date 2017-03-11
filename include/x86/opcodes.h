@@ -16,7 +16,9 @@ typedef enum
 	REGISTER_EAX,
 	REGISTER_EBX,
 	REGISTER_ECX,
-	REGISTER_EDX
+	REGISTER_EDX,
+	REGISTER_EDI,
+	REGISTER_ESI
 } register_e;
 
 #endif

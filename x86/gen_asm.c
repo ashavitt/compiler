@@ -149,7 +149,9 @@ static char * register_to_text[] = {
     "eax",
     "ebx",
     "ecx",
-    "edx"
+    "edx",
+    "edi",
+    "esi"
 };
 
 /* TODO: add error handling in this file */
