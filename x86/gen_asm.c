@@ -137,7 +137,19 @@ bool parse_block(code_block_t * code_block, closure_t * closure)
 }
 
 static char * instruction_to_text[] = {
-    "mov"
+    "mov",
+    "add",
+    "sub",
+    "mul",
+    "div",
+    "jmp"
+};
+
+static char * register_to_text[] = {
+    "eax",
+    "ebx",
+    "ecx",
+    "edx"
 };
 
 /* TODO: add error handling in this file */
@@ -171,6 +183,9 @@ bool print_operand(operand_e * operand, char * instruction_text, size_t instruct
             snprintf(operand_text, sizeof(operand_text), "%d", operand->signed_dword);
             strncat(instruction_text, operand_text, instruction_text_size);
             break;
+	case OPERAND_TYPE_REG:
+	    snprintf(operand_text, sizeof(operand_text), "%s", register_to_text[operand->reg]);
+	    strncat(instruction_text, operand_text, instruction_text_size);
         default:
             return false;
     }
