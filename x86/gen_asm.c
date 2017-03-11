@@ -117,9 +117,6 @@ bool load_expression_to_register(statement_expression_t * expression, closure_t 
             return load_from_stack(get_variable(closure, expression->identifier), closure, target_register);
         /* if we got here, our value is on the stack */
         default:
-            if(!generate_expression(expression, closure)) {
-                return false;
-            }
             expression_result = lookup_expression_result(expression, closure);
             if (NULL == expression_result) {
                 return false;
@@ -137,65 +134,6 @@ variable_t * allocate_variable_from_destination(statement_expression_t * dst_exp
     return allocate_variable(closure, 4, "", VALUE_TYPE_EXPRESSION_RESULT);
 }
 
-bool generate_addition(statement_expression_t * expression, closure_t * closure) {
-    bool success = false;
-    variable_t * result = NULL;
-    expression_op_t * addition = &expression->exp_op;
-    asm_node_t *node_add = NULL;
-    asm_node_t *node_store = NULL;
-
-    node_add =  malloc(sizeof(*node_add));
-    node_store = malloc(sizeof(*node_store));
-    if (NULL == node_add || NULL == node_store) {
-        success = false;
-        goto cleanup;
-    }
-
-    if (!load_expression_to_register(addition->exp1, closure, REGISTER_EAX)) {
-        success = false;
-        goto cleanup;
-    }
-
-    if (!load_expression_to_register(addition->exp2, closure, REGISTER_EBX)) {
-        success = false;
-        goto cleanup;
-    }
-
-    node_add->opcode = OPCODE_ADD;
-    node_add->operand1.type = OPERAND_TYPE_REG;
-    node_add->operand1.reg = REGISTER_EAX;
-    node_add->operand2.type = OPERAND_TYPE_REG;
-    node_add->operand2.reg = REGISTER_EBX;
-
-    result = allocate_variable_from_destination(addition->exp1, closure);
-    if (NULL == result) {
-        success = false;
-        goto cleanup;
-    }
-
-    node_store->operand1.type = OPERAND_TYPE_STACK_DWORD;
-    node_store->operand1.stack_offset = result->position.stack_offset;
-    node_store->operand2.type = OPERAND_TYPE_REG;
-    node_store->operand2.reg = REGISTER_EAX;
-
-    add_instruction_to_closure(node_add, closure);
-    add_instruction_to_closure(node_store, closure);
-    result->evaluated_expression = expression;
-
-    success = true;
-
-cleanup:
-    if (!success) {
-        if (node_add != NULL) {
-            free(node_add);
-        }
-        if (node_store != NULL) {
-            free(node_store);
-        }
-    }
-    return success;
-}
-
 bool generate_assignment(statement_expression_t * expression, closure_t * closure) {
     expression_op_t * assignment = &expression->exp_op;
     /* TODO: error handling when left side is not variable */
@@ -207,6 +145,10 @@ bool generate_assignment(statement_expression_t * expression, closure_t * closur
 
     memset(node, 0, sizeof(*node));
     if (assignment->exp1->type == EXPRESSION_TYPE_IDENTIFIER) {
+        if(!generate_expression(assignment->exp2, closure)) {
+            return false;
+        }
+
         if (!load_expression_to_register(assignment->exp2, closure, REGISTER_EAX)) {
             return false;
         }
@@ -226,12 +168,88 @@ bool generate_assignment(statement_expression_t * expression, closure_t * closur
     return true;
 }
 
+
+
+bool generate_arithmetic_operator(statement_expression_t * expression, closure_t * closure, opcode_e opcode) {
+    bool success = false;
+    variable_t * result = NULL;
+    expression_op_t * addition = &expression->exp_op;
+    asm_node_t *node_op = NULL;
+    asm_node_t *node_store = NULL;
+
+    node_op =  malloc(sizeof(*node_op));
+    node_store = malloc(sizeof(*node_store));
+    if (NULL == node_op || NULL == node_store) {
+        success = false;
+        goto cleanup;
+    }
+
+    if(!generate_expression(addition->exp1, closure)) {
+        return false;
+    }
+
+    if(!generate_expression(addition->exp2, closure)) {
+        return false;
+    }
+
+    if (!load_expression_to_register(addition->exp1, closure, REGISTER_EAX)) {
+        success = false;
+        goto cleanup;
+    }
+
+    if (!load_expression_to_register(addition->exp2, closure, REGISTER_EBX)) {
+        success = false;
+        goto cleanup;
+    }
+
+    node_op->operand1.type = OPERAND_TYPE_REG;
+    node_op->operand1.reg = REGISTER_EAX;
+    node_op->operand2.type = OPERAND_TYPE_REG;
+    node_op->operand2.reg = REGISTER_EBX;
+    node_op->opcode = opcode;
+
+    result = allocate_variable_from_destination(addition->exp1, closure);
+    if (NULL == result) {
+        success = false;
+        goto cleanup;
+    }
+
+    node_store->operand1.type = OPERAND_TYPE_STACK_DWORD;
+    node_store->operand1.stack_offset = result->position.stack_offset;
+    node_store->operand2.type = OPERAND_TYPE_REG;
+    node_store->operand2.reg = REGISTER_EAX;
+
+    add_instruction_to_closure(node_op, closure);
+    add_instruction_to_closure(node_store, closure);
+    result->evaluated_expression = expression;
+
+    success = true;
+
+cleanup:
+    if (!success) {
+        if (node_op != NULL) {
+            free(node_op);
+        }
+        if (node_store != NULL) {
+            free(node_store);
+        }
+    }
+    return success;
+}
+
+
 bool generate_operation(statement_expression_t * expression, closure_t * closure) {
     switch (expression->exp_op.op) {
         case OP_ASSIGN:
             return generate_assignment(expression, closure);
         case OP_ADD:
-            return generate_addition(expression, closure);
+            return generate_arithmetic_operator(expression, closure, OPCODE_ADD);
+        case OP_BAND:
+            return generate_arithmetic_operator(expression, closure, OPCODE_AND);
+        case OP_BOR:
+            return generate_arithmetic_operator(expression, closure, OPCODE_OR);
+        case OP_SUB:
+            return generate_arithmetic_operator(expression, closure, OPCODE_SUB);
         default:
             return false;
     }
