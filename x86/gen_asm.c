@@ -181,10 +181,12 @@ static char * instruction_to_text[] = {
 };
 
 static char * register_to_text[] = {
-        "eax",
-        "ebx",
-        "ecx",
-        "edx"
+    "eax",
+    "ebx",
+    "ecx",
+    "edx",
+    "edi",
+    "esi"
 };
 
 /* TODO: add error handling in this file */
