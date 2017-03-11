@@ -157,8 +157,11 @@ int main(int argc, char * argv[])
 	yyparse(&code_file);
 	debug_ast(&code_file);
 	printf("ASSEMBLY:\n");
-    gen_asm_x86(&code_file, 1);
-    printf("\n");
+    if(!gen_asm_x86(&code_file, 1)) {
+        printf("\nFailed generating assembly!\n");
+    } else {
+        printf("\n");
+    }
     fflush(stdout);
     return 0;
 }

@@ -20,13 +20,13 @@ variable_t * get_variable(closure_t * closure, char * identifier) {
     return NULL;
 }
 
-variable_t * allocate_variable(closure_t * closure, size_t size, char * identifier) {
+variable_t * allocate_variable(closure_t * closure, size_t size, char * identifier, value_type_e type) {
     variable_t * new_variable = malloc(sizeof(*new_variable));
     if (NULL == new_variable) {
         return NULL;
     }
     new_variable->next = closure->variables;
-    new_variable->type = VALUE_TYPE_VARIABLE;
+    new_variable->type = type;
     if (closure->variables == NULL) {
         new_variable->position = (position_t){
                 .stack_offset = -4
@@ -81,6 +81,7 @@ bool load_from_stack(variable_t * variable, closure_t * closure, register_e targ
     switch (variable->size) {
         case 4: /* TODO: YAY INT ONLY */
             node->operand2.type = OPERAND_TYPE_STACK_DWORD;
+            break;
         default:
             return false;
     }
@@ -107,15 +108,6 @@ bool load_const_to_register(long constant, closure_t * closure, register_e targe
 
 bool load_expression_to_register(statement_expression_t * expression, closure_t * closure, register_e target_register) {
     variable_t * expression_result = NULL;
-    if (expression->type == EXPRESSION_TYPE_OP) {
-        if(!generate_expression(expression, closure)) {
-            return false;
-        }
-    }
-    expression_result = lookup_expression_result(expression, closure);
-    if (NULL == expression_result) {
-        return false;
-    }
 
     switch (expression->type) {
         case EXPRESSION_TYPE_CONST:
@@ -125,6 +117,13 @@ bool load_expression_to_register(statement_expression_t * expression, closure_t 
             return load_from_stack(get_variable(closure, expression->identifier), closure, target_register);
         /* if we got here, our value is on the stack */
         default:
+            if(!generate_expression(expression, closure)) {
+                return false;
+            }
+            expression_result = lookup_expression_result(expression, closure);
+            if (NULL == expression_result) {
+                return false;
+            }
             return load_from_stack(expression_result, closure, target_register);
     }
 }
@@ -135,7 +134,7 @@ variable_t * allocate_variable_from_destination(statement_expression_t * dst_exp
     }
 
     /* TODO: recursively check for type of expression */
-    return allocate_variable(closure, 4, "");
+    return allocate_variable(closure, 4, "", VALUE_TYPE_EXPRESSION_RESULT);
 }
 
 bool generate_addition(statement_expression_t * expression, closure_t * closure) {
@@ -181,6 +180,7 @@ bool generate_addition(statement_expression_t * expression, closure_t * closure)
 
     add_instruction_to_closure(node_add, closure);
     add_instruction_to_closure(node_store, closure);
+    result->evaluated_expression = expression;
 
     success = true;
 
@@ -206,14 +206,16 @@ bool generate_assignment(statement_expression_t * expression, closure_t * closur
     }
 
     memset(node, 0, sizeof(*node));
-    if (assignment->exp1->type == EXPRESSION_TYPE_IDENTIFIER && assignment->exp2->type == EXPRESSION_TYPE_CONST) {
-        node->next = NULL;
+    if (assignment->exp1->type == EXPRESSION_TYPE_IDENTIFIER) {
+        if (!load_expression_to_register(assignment->exp2, closure, REGISTER_EAX)) {
+            return false;
+        }
+
         node->opcode = OPCODE_MOV;
         node->operand1.type = OPERAND_TYPE_STACK_DWORD;
         node->operand1.stack_offset = assigned_variable->position.stack_offset;
-        node->operand2.type = OPERAND_TYPE_SIGNED_DWORD_CONST;
-        /* TODO: add overflow checks */
-        node->operand2.signed_dword = (int32_t)assignment->exp2->constant;
+        node->operand2.type = OPERAND_TYPE_REG;
+        node->operand2.reg = REGISTER_EAX;
 
         add_instruction_to_closure(node, closure);
         assigned_variable->evaluated_expression = expression;
@@ -255,7 +257,7 @@ bool generate_expression(statement_expression_t * expression, closure_t * closur
 
 bool generate_declaration(statement_t * statement, closure_t * closure) {
     /* TODO: check type of declaration */
-    if (NULL == allocate_variable(closure, 4, statement->declaration.identifier)) {
+    if (NULL == allocate_variable(closure, 4, statement->declaration.identifier, VALUE_TYPE_VARIABLE)) {
         return false;
     }
 
@@ -400,7 +402,7 @@ bool generate_assembly(asm_node_t * instructions, int out_fd) {
         write(out_fd, "\n", 1);
         current_instruction = current_instruction->next;
     }
-    return false;
+    return true;
 }
 
 bool gen_asm_x86(code_file_t * code_file, int out_fd)
@@ -412,7 +414,9 @@ bool gen_asm_x86(code_file_t * code_file, int out_fd)
 	code_block_t * code_block = code_file->first_block;
 	while (code_block != NULL)
 	{
-		parse_block(code_block, &file_closure);
+		if(!parse_block(code_block, &file_closure)) {
+            printf("Failed parsing to intermediate RISC\nGenerating assembly anyway.\n");
+        }
 		code_block = NULL; // TODO add the other blocks
 	}
 
