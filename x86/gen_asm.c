@@ -295,8 +295,14 @@ static char * instruction_to_text[] = {
     "add",
     "sub",
     "mul",
+    "imul",
     "div",
-    "jmp"
+    "xor",
+    "and",
+    "or",
+    "jmp",
+    "push",
+    "pop"
 };
 
 static char * register_to_text[] = {
