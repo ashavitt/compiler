@@ -1,13 +1,13 @@
 %code requires {
-#include "ast.h"
-#include "ast_nodes.h"
-#include "ast_flow.h"
+#include <ast.h>
+#include <ast_nodes.h>
+#include <ast_flow.h>
 }
 
 %{
 #include <stdio.h>
-#include "symbol_table.h"
-#include "ast.h"
+#include <symbol_table.h>
+#include <ast.h>
 
 static int errors = 0;
 static int yydebug = 0;

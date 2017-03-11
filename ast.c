@@ -1,5 +1,5 @@
-#include "ast.h"
-#include "ast_nodes.h"
+#include <ast.h>
+#include <ast_nodes.h>
 #include <stdlib.h>
 #include <stdio.h>
 

@@ -1,5 +1,5 @@
 %{
-#include "y.tab.h" /* tokens' file */
+#include <y.tab.h> /* tokens' file */
 #include <string.h>
 #include <stdlib.h>
 %}
