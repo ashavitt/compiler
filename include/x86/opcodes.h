@@ -8,7 +8,9 @@ typedef enum opcode
     OPCODE_SUB,
     OPCODE_MUL,
     OPCODE_DIV,
-    OPCODE_JMP
+    OPCODE_JMP,
+	OPCODE_AND,
+    OPCODE_OR
 } opcode_e;
 
 typedef enum
