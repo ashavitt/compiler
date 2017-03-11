@@ -4,7 +4,7 @@
 #include <stdlib.h>
 %}
 
-NUMBER			[-+]?[0-9]+
+NUMBER			[-+]?(0x)?[0-9]+
 IDENTIFIER		[a-zA-Z][a-zA-Z0-9_]*
 
 %%
