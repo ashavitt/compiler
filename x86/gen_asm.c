@@ -183,9 +183,30 @@ bool print_operand(operand_e * operand, char * instruction_text, size_t instruct
             snprintf(operand_text, sizeof(operand_text), "%d", operand->signed_dword);
             strncat(instruction_text, operand_text, instruction_text_size);
             break;
+	case OPERAND_TYPE_UNSIGNED_DWORD_CONST:
+            snprintf(operand_text, sizeof(operand_text), "%ud", operand->unsigned_dword);
+            strncat(instruction_text, operand_text, instruction_text_size);
+            break;
+        case OPERAND_TYPE_SIGNED_WORD_CONST:
+            snprintf(operand_text, sizeof(operand_text), "%d", operand->signed_word);
+            strncat(instruction_text, operand_text, instruction_text_size);
+            break;
+	case OPERAND_TYPE_UNSIGNED_WORD_CONST:
+            snprintf(operand_text, sizeof(operand_text), "%ud", operand->unsigned_word);
+            strncat(instruction_text, operand_text, instruction_text_size);
+            break;
+        case OPERAND_TYPE_SIGNED_BYTE_CONST:
+            snprintf(operand_text, sizeof(operand_text), "%d", operand->signed_byte);
+            strncat(instruction_text, operand_text, instruction_text_size);
+            break;
+	case OPERAND_TYPE_UNSIGNED_BYTE_CONST:
+            snprintf(operand_text, sizeof(operand_text), "%ud", operand->unsigned_byte);
+            strncat(instruction_text, operand_text, instruction_text_size);
+            break;
 	case OPERAND_TYPE_REG:
 	    snprintf(operand_text, sizeof(operand_text), "%s", register_to_text[operand->reg]);
 	    strncat(instruction_text, operand_text, instruction_text_size);
+	    break;
         default:
             return false;
     }
