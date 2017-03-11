@@ -25,6 +25,8 @@ else			{return TOK_ELSE;}
 !=			{ return TOK_NEQUAL; }
 \|\|			{ return TOK_OP_OR; }
 &&			{ return TOK_OP_AND; }
+\>\>			{ return TOK_SHIFT_RIGHT; }
+\<\<			{ return TOK_SHIFT_LEFT; }
 
 .			{return yytext[0];}
 %%

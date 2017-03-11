@@ -67,6 +67,7 @@ declaration_type_e declaration_type;
 %token TOK_CHAR TOK_INT TOK_LONG
 %token TOK_IF TOK_ELSE
 %token TOK_EQUAL TOK_OP_OR TOK_OP_AND
+%token TOK_SHIFT_LEFT TOK_SHIFT_RIGHT
 %token <long_value> TOK_NUMBER
 %token <identifier_name> TOK_IDENTIFIER
 
@@ -86,6 +87,7 @@ declaration_type_e declaration_type;
 %left '&'
 %left TOK_EQUAL
 %left TOK_NEQUAL
+%left TOK_SHIFT_RIGHT TOK_SHIFT_LEFT
 %left '+' '-'
 %left '*' '/'
 
@@ -125,6 +127,8 @@ expr : TOK_NUMBER { $$ = create_const_expression($1); }
      | expr '&' expr { $$ = create_op_expression(OP_BAND, $1, $3, NULL); }
      | expr TOK_EQUAL expr { $$ = create_op_expression(OP_EQUAL, $1, $3, NULL); }
      | expr TOK_NEQUAL expr { $$ = create_op_expression(OP_NEQUAL, $1, $3, NULL); }
+     | expr TOK_SHIFT_RIGHT expr { $$ = create_op_expression(OP_BSHIFT_RIGHT, $1, $3, NULL); }
+     | expr TOK_SHIFT_LEFT expr { $$ = create_op_expression(OP_BSHIFT_LEFT, $1, $3, NULL); }
      | expr '+' expr { $$ = create_op_expression(OP_ADD, $1, $3, NULL); }
      | expr '-' expr { $$ = create_op_expression(OP_SUB, $1, $3, NULL); }
      | expr '*' expr { $$ = create_op_expression(OP_MUL, $1, $3, NULL); }
