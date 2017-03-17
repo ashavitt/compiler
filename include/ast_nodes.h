@@ -123,7 +123,7 @@ statement_declaration_t * create_declaration(
 );
 
 statement_declaration_t * declaration_add_modifier(
-	statement_expression_t * declaration,
+	statement_declaration_t * declaration,
 	declaration_type_modifier_t modifier
 );
 
