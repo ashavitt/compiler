@@ -105,8 +105,8 @@ typedef struct declaration_type_base_type_s {
  */
 typedef struct declaration_type_s
 {
-    declaration_type_base_t base_type;
-    declaration_type_base_type_t base_type;
+    declaration_type_base_t type_base;
+    declaration_type_base_type_t type_base_type;
     unsigned long deref_count;
     declaration_type_modifier_t modifier;
 } declaration_type_t;
@@ -118,7 +118,7 @@ typedef struct statement_declaration
 } statement_declaration_t;
 
 statement_declaration_t * create_declaration(
-	declaration_type_e type,
+	declaration_type_base_type_primitive_t type,
 	const char * identifier);
 
 #endif

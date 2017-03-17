@@ -117,10 +117,15 @@ statement_declaration_t * create_declaration(
 
 	strncpy(identifier_copy, identifier, identifier_len);
 
-	new_decl->base_type = type;
 	new_decl->identifier = identifier_copy;
-	new_decl->deref_count = 0;
-	new_decl->modifier = (declaration_type_modifier_t) {
+
+	new_decl->type.type_base = DECLARATION_TYPE_BASE_PRIMITIVE;
+	new_decl->type.type_base_type = (declaration_type_base_type_t) {
+		.is_primitive = true,
+		.primitive = type
+	};
+	new_decl->type.deref_count = 0;
+	new_decl->type.modifier = (declaration_type_modifier_t) {
 		.is_const = false,
 		.is_volatile = false,
 		.is_unsigned = false,
