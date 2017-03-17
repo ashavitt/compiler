@@ -36,12 +36,34 @@ type_t *lookup_type(
     return NULL;
 }
 
-static unsigned long calculate_union_size(declaration_type_t *type) {
-    return 0;
+static unsigned long calculate_size(type_space_t *type_space, declaration_type_t *type);
+
+static unsigned long align(unsigned long size) {
+    return (4 - (size % 4)) + size;
 }
 
-static unsigned long calculate_struct_size(declaration_type_t *type) {
-    return 0;
+static unsigned long calculate_union_size(type_space_t *type_space, declaration_type_t *type) {
+    unsigned long struct_size = align(calculate_size(type_space, &type->type_base_type.fields->declaration->type));
+    unsigned long current_size = 0;
+    field_t *current_field = type->type_base_type.fields->next;
+    while (current_field != NULL) {
+        current_size = align(calculate_size(type_space, &current_field->declaration->type));
+        if (current_size > struct_size) {
+            struct_size = current_size;
+        }
+        current_field = current_field->next;
+    }
+    return struct_size;
+}
+
+static unsigned long calculate_struct_size(type_space_t *type_space, declaration_type_t *type) {
+    unsigned long struct_size = align(calculate_size(type_space, &type->type_base_type.fields->declaration->type));
+    field_t *current_field = type->type_base_type.fields->next;
+    while (current_field != NULL) {
+        struct_size += align(calculate_size(type_space, &current_field->declaration->type));
+        current_field = current_field->next;
+    }
+    return struct_size;
 }
 
 static unsigned long calculate_size(type_space_t *type_space, declaration_type_t *type) {
@@ -52,15 +74,16 @@ static unsigned long calculate_size(type_space_t *type_space, declaration_type_t
 
     switch(type->type_base) {
         case DECLARATION_TYPE_BASE_PRIMITIVE:
+            /* assuming all primitive are already aligned.. */
             return lookup_type(type_space, get_primitive_string(type->type_base_type.primitive))->size;
         case DECLARATION_TYPE_BASE_CUSTOM_TYPE:
-            return calculate_size(type_space, type->type_base_type.typedef_type);
+            return calculate_size(type_space, type->type_base_type.typedef_type));
         case DECLARATION_TYPE_BASE_STRUCT:
-            break;
+            return calculate_struct_size(type_space, type));
         case DECLARATION_TYPE_BASE_ENUM:
-            break;
+            return 4; /* int size :) */
         case DECLARATION_TYPE_BASE_UNION:
-            break;
+            return align(calculate_union_size(type_space, type));
     }
 
     return 0;
@@ -68,8 +91,7 @@ static unsigned long calculate_size(type_space_t *type_space, declaration_type_t
 
 bool add_type(
     type_space_t *type_space,
-    declaration_type_t *type,
-    char * type_name
+    statement_declaration_t *declaration
 ) {
     type_t *new_type = malloc(sizeof(*new_type));
     type_t **space_to_insert_to = NULL;
@@ -78,7 +100,7 @@ bool add_type(
         return false;
     }
 
-    switch (type->type_base) {
+    switch (declaration->type.type_base) {
         case DECLARATION_TYPE_BASE_STRUCT:
             space_to_insert_to = &type_space->struct_space;
             break;
@@ -93,20 +115,73 @@ bool add_type(
     }
 
     new_type->next = *space_to_insert_to;
-    new_type->declaration_type = type;
+    new_type->declaration_type = &declaration->type;
 
-    new_type->size = calculate_size(type_space, type);
+    new_type->size = calculate_size(type_space, &declaration->type);
     /* internal error */
     if (new_type->size == 0) {
         free(new_type);
         return false;
     }
 
-    /* align to size and to 4(that is the word size) */
-    new_type->alignment = 4 - (new_type->size % 4) + new_type->size;
-
     /* TODO: should we deep-copy? */
-    new_type->name = type_name;
+    new_type->name = declaration->identifier;
     *space_to_insert_to = new_type;
     return true;
+}
+
+static bool add_primitive(
+    type_space_t *type_space,
+    declaration_type_base_type_primitive_t primitive,
+    unsigned long size
+) {
+    type_t *current_type = NULL;
+
+    current_type = malloc(sizeof(*current_type));
+    if (NULL == current_type) {
+        return false;
+    }
+    current_type->name = get_primitive_string(primitive);
+    current_type->size = size;
+    current_type->next = type_space->normal_space;
+    current_type->declaration_type = NULL;
+    type_space->normal_space = current_type;
+    return true;
+}
+
+type_space_t * create_empty_space() {
+    type_space_t *empty_space = malloc(sizeof(*empty_space));
+    type_t *current_type = NULL;
+    if (NULL == empty_space) {
+        return NULL;
+    }
+
+    empty_space->struct_space = NULL;
+    empty_space->enum_space = NULL;
+    empty_space->union_space = NULL;
+
+    /* TODO: free recursively */
+    /* initialize primitives */
+    if(!add_primitive(empty_space, DECLARATION_TYPE_BASE_TYPE_INT, 4)) {
+        return NULL;
+    }
+
+    if(!add_primitive(empty_space, DECLARATION_TYPE_BASE_TYPE_CHAR, 1)) {
+        return NULL;
+    }
+
+    if(!add_primitive(empty_space, DECLARATION_TYPE_BASE_TYPE_SHORT, 2)) {
+        return NULL;
+    }
+
+    if(!add_primitive(empty_space, DECLARATION_TYPE_BASE_TYPE_LONG_LONG, 16)) {
+        return NULL;
+    }
+
+    if(!add_primitive(empty_space, DECLARATION_TYPE_BASE_TYPE_LONG, 8)) {
+        return NULL;
+    }
+
+
+    return empty_space;
 }

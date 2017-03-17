@@ -7,7 +7,6 @@ typedef struct type_s {
     struct type_s *next;
     declaration_type_t *declaration_type;
     unsigned long size;
-    unsigned long alignment;
     char * name;
 } type_t;
 
@@ -25,8 +24,9 @@ type_t *lookup_type(
 
 bool add_type(
     type_space_t *type_space,
-    declaration_type_t *type,
-    char * type_name
+    statement_declaration_t *declaration
 );
+
+type_space_t * create_empty_space();
 
 #endif
