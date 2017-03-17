@@ -117,6 +117,29 @@ char* get_primitive_string(declaration_type_base_type_primitive_t primitive) {
     return "Unknown primitive, internal error";
 }
 
+void print_declaration(declaration_type_t * declaration);
+
+void print_fields(field_t *fields) {
+    while (fields != NULL) {
+        printf("%s", fields->name);
+        print_declaration(fields->field_type);
+        printf(";\n");
+        fields = fields->next;
+    }
+}
+
+void print_enum_fields(field_t *fields) {
+    while (fields != NULL) {
+        if (fields->next != NULL) {
+            printf("%s = %lu,\n", fields->name, fields->enum_value);
+        }
+        else{
+            printf("%s = %lu\n", fields->name, fields->enum_value);
+        }
+        fields = fields->next;
+    }
+}
+
 void print_declaration(declaration_type_t * declaration) {
     unsigned long deref_count = declaration->deref_count;
 
@@ -136,11 +159,22 @@ void print_declaration(declaration_type_t * declaration) {
     if (declaration->type_base == DECLARATION_TYPE_BASE_PRIMITIVE) {
         printf("%s ", get_primitive_string(declaration->type_base_type.primitive));
     }
-    else if (declaration->type_base == DECLARATION_TYPE_BASE_STRUCT ||
-             declaration->type_base == DECLARATION_TYPE_BASE_ENUM ||
-             declaration->type_base == DECLARATION_TYPE_BASE_CUSTOM_TYPE
-    ) {
-        printf("%s ", declaration->type_base_type.type);
+    else if (declaration->type_base == DECLARATION_TYPE_BASE_STRUCT) {
+        printf("struct { \n");
+        print_fields(declaration->type_base_type.fields);
+        printf("}");
+    } else if (declaration->type_base == DECLARATION_TYPE_BASE_UNION) {
+        printf("union { \n");
+        print_fields(declaration->type_base_type.fields);
+        printf("}");
+    } else if (declaration->type_base == DECLARATION_TYPE_BASE_ENUM) {
+        printf("enum { \n");
+        print_enum_fields(declaration->type_base_type.fields);
+        printf("}");
+    } else if (declaration->type_base == DECLARATION_TYPE_BASE_CUSTOM_TYPE) {
+        printf("(");
+        print_declaration(declaration->type_base_type.typedef_type);
+        printf(")");
     }
     else {
         printf("Unknown type, internal error");
