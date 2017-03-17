@@ -175,7 +175,7 @@ declaration_type : TOK_CHAR { $$ = DECLARATION_TYPE_BASE_TYPE_CHAR; }
 		 | TOK_LONG { $$ = DECLARATION_TYPE_BASE_TYPE_LONG; }
 		 ;
 
-declaration_indirections : '*' declaration_indirections { $$ = $2 + 1; }
+declaration_indirections : declaration_indirections '*' { $$ = $1 + 1; }
 			 | { $$ = 0; }
 			 ;
 
