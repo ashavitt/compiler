@@ -60,6 +60,7 @@ code_block_t * code_block;
 statement_expression_t * statement_expression;
 statement_declaration_t * statement_declaration;
 statement_ifelse_t * statement_ifelse;
+statement_loop_t * statement_loop;
 declaration_type_base_type_primitive_t declaration_type;
 declaration_type_modifier_t declaration_modifier;
 }
@@ -67,7 +68,7 @@ declaration_type_modifier_t declaration_modifier;
 %start file
 %token TOK_CHAR TOK_INT TOK_LONG
 %token TOK_SIGNED TOK_UNSIGNED TOK_CONST TOK_VOLATILE TOK_REGISTER
-%token TOK_IF TOK_ELSE
+%token TOK_IF TOK_ELSE TOK_FOR TOK_WHILE
 %token TOK_EQUAL TOK_OP_OR TOK_OP_AND
 %token TOK_SHIFT_LEFT TOK_SHIFT_RIGHT
 %token <long_value> TOK_NUMBER
@@ -77,9 +78,13 @@ declaration_type_modifier_t declaration_modifier;
 %type <code_block> lines
 %type <code_block> block
 %type <statement_expression> expr
+%type <statement_expression> optional_expr
 %type <statement_declaration> declaration
 %type <statement_declaration> declaration_primitive
 %type <statement_ifelse> ifelse
+%type <statement_loop> loop
+%type <statement_loop> for_loop
+%type <statement_loop> while_loop
 %type <declaration_type> declaration_type
 %type <declaration_modifier> declaration_modifier
 
@@ -114,11 +119,24 @@ lines : statement { code_block_t * code_block = malloc(sizeof(code_block_t));
 statement : expr ';' { $$ = create_statement_expression($1); }
 	  | declaration ';' { $$ = create_statement_declaration($1); }
 	  | ifelse { $$ = create_statement_ifelse($1); }
+	  | loop { $$ = create_statement_loop($1); }
 	  ;
 
 ifelse : TOK_IF '(' expr ')' block TOK_ELSE block { $$ = create_ifelse_statement($3, $5, $7); }
        | TOK_IF '(' expr ')' block { $$ = create_ifelse_statement($3, $5, NULL); }
        ;
+
+loop : for_loop
+     | while_loop
+     ;
+
+for_loop : TOK_FOR '(' optional_expr ';' optional_expr ';' optional_expr ')' block { $$ = create_loop_statement($3, $5, $7, $9); }
+
+while_loop : TOK_WHILE '(' expr ')' block  { $$ = create_loop_statement(NULL, $3, NULL, $5); }
+
+optional_expr : expr { $$ = $1; }
+	      | { $$ = NULL; }
+	      ;
 
 expr : TOK_NUMBER { $$ = create_const_expression($1); }
      | TOK_IDENTIFIER { lookup_symbol($1);

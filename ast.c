@@ -57,6 +57,17 @@ statement_t * create_statement_ifelse(statement_ifelse_t * ifelse)
 	return stmt;
 }
 
+statement_t * create_statement_loop(statement_loop_t * loop)
+{
+	statement_t * stmt = create_statement(STATEMENT_TYPE_LOOP);
+	if (NULL == stmt)
+	{
+		return NULL;
+	}
+	stmt->loop = *loop;
+	return stmt;
+}
+
 void add_statement(
 	code_block_t * code_block,
 	statement_t * statement)
@@ -174,6 +185,27 @@ void debug_ifelse(statement_ifelse_t * ifelse, int offset)
 	}
 }
 
+void debug_loop(statement_loop_t * loop, int offset)
+{
+	if (loop->init_expression != NULL)
+	{
+		printf("%*sINIT\n", offset * debug_shift_width, "");
+		debug_expression(loop->init_expression, offset + 1);
+	}
+	if (loop->condition_expression != NULL)
+	{
+		printf("%*sCONDITION\n", offset * debug_shift_width, "");
+		debug_expression(loop->condition_expression, offset + 1);
+	}
+	if (loop->iteration_expression != NULL)
+	{
+		printf("%*sITERATION\n", offset * debug_shift_width, "");
+		debug_expression(loop->iteration_expression, offset + 1);
+	}
+	printf("%*sLOOP BODY\n", offset * debug_shift_width, "");
+	debug_code_block(loop->loop_body, offset + 1);
+}
+
 void debug_code_block(
 	code_block_t * code_block, int offset)
 {
@@ -195,6 +227,10 @@ void debug_code_block(
 			case STATEMENT_TYPE_IFELSE:
 				printf("ifelse block\n");
 				debug_ifelse(&(statement->ifelse), offset + 1);
+				break;
+			case STATEMENT_TYPE_LOOP:
+				printf("loop block\n");
+				debug_loop(&(statement->loop), offset + 1);
 				break;
 		}
 		statement = statement->next;

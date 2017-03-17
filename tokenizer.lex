@@ -18,6 +18,8 @@ volatile		{return TOK_VOLATILE;}
 register		{return TOK_REGISTER;}
 if			{return TOK_IF;}
 else			{return TOK_ELSE;}
+for			{return TOK_FOR;}
+while			{return TOK_WHILE;}
 {IDENTIFIER}		{
 	yylval.identifier_name = strdup(yytext);
 	return TOK_IDENTIFIER;}

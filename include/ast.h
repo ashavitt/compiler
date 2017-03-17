@@ -10,7 +10,8 @@ typedef enum statement_type
 {
 	STATEMENT_TYPE_DECLARATION,
 	STATEMENT_TYPE_EXPRESSION,
-	STATEMENT_TYPE_IFELSE
+	STATEMENT_TYPE_IFELSE,
+	STATEMENT_TYPE_LOOP
 } statement_type_e;
 
 typedef struct statement
@@ -22,6 +23,7 @@ typedef struct statement
 		statement_declaration_t declaration;
 		statement_expression_t expression;
 		statement_ifelse_t ifelse;
+		statement_loop_t loop;
 	};
 } statement_t;
 
@@ -38,6 +40,7 @@ typedef struct code_file
 statement_t * create_statement_expression(statement_expression_t * expr);
 statement_t * create_statement_declaration(statement_declaration_t * decl);
 statement_t * create_statement_ifelse(statement_ifelse_t * ifelse);
+statement_t * create_statement_loop(statement_loop_t * loop);
 void add_statement(code_block_t * file, statement_t * statement);
 void debug_ast(code_file_t * code_file);
 void debug_code_block(code_block_t * code_block, int offset);
