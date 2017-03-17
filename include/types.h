@@ -3,7 +3,7 @@
 
 #include <ast_nodes.h>
 
-typedef struct type_metadata {
+typedef struct type_s {
     struct type_metadata *next;
     declaration_type_t declaration_type;
     unsigned long size;
@@ -11,12 +11,20 @@ typedef struct type_metadata {
 } type_t;
 
 typedef struct type_space_s {
-    struct type_metadata *primitive_space;
-    struct type_metadata *struct_space;
-    struct type_metadata *enum_space;
-    struct type_metadata *union_space;
+    type_t *primitive_space;
+    type_t *struct_space;
+    type_t *enum_space;
+    type_t *union_space;
 } type_space_t;
 
+type_t *lookup_type(
+    type_space_t *type_space,
+    char * type_name
+);
 
+bool add_type(
+    type_space_t *type_space,
+    declaration_type_base_type_t type
+);
 
 #endif

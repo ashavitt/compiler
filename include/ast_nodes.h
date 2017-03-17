@@ -74,6 +74,7 @@ typedef enum declaration_type_base_e {
     DECLARATION_TYPE_BASE_PRIMITIVE,
     DECLARATION_TYPE_BASE_STRUCT,
     DECLARATION_TYPE_BASE_ENUM,
+    DECLARATION_TYPE_BASE_UNION,
     DECLARATION_TYPE_BASE_CUSTOM_TYPE
 } declaration_type_base_t;
 
@@ -92,24 +93,36 @@ typedef enum declaration_type_base_type_primitive_e {
     DECLARATION_TYPE_BASE_TYPE_CHAR
 } declaration_type_base_type_primitive_t;
 
+typedef struct declaration_type_s declaration_type_t;
+
+typedef struct field_s {
+    struct field_s *next;
+    char * name;
+    union {
+        unsigned long enum_value;
+        declaration_type_t *field_type;
+    };
+} field_t;
+
 typedef struct declaration_type_base_type_s {
     bool is_primitive;
     union {
         declaration_type_base_type_primitive_t primitive;
-        char * type;
+        field_t *fields;
+        struct declaration_type_s *typedef_type;
     };
 } declaration_type_base_type_t;
 
 /*!
  * TODO: add linkage type (static/extern)
  */
-typedef struct declaration_type_s
+struct declaration_type_s
 {
     declaration_type_base_t type_base;
     declaration_type_base_type_t type_base_type;
     unsigned long deref_count;
     declaration_type_modifier_t modifier;
-} declaration_type_t;
+};
 
 typedef struct statement_declaration
 {
