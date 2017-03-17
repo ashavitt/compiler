@@ -206,6 +206,8 @@ field_t * declaration_create_field(
 	new_field->next = next_fields;
 	new_field->declaration = declaration;
 
+	return new_field;
+
 cleanup:
 	/* TODO free declaration */
 	free(declaration);
