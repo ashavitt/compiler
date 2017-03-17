@@ -64,6 +64,7 @@ statement_loop_t * statement_loop;
 declaration_type_base_type_primitive_t declaration_type;
 declaration_type_modifier_t declaration_modifier;
 unsigned long declaration_indirections;
+field_t * declaration_struct_field_list;
 }
 
 %start file
@@ -81,6 +82,7 @@ unsigned long declaration_indirections;
 %type <statement_expression> expr
 %type <statement_expression> optional_expr
 %type <statement_declaration> declaration
+%type <statement_declaration> declaration_struct
 %type <statement_declaration> declaration_primitive
 %type <statement_ifelse> ifelse
 %type <statement_loop> loop
@@ -89,6 +91,7 @@ unsigned long declaration_indirections;
 %type <declaration_type> declaration_type
 %type <declaration_modifier> declaration_modifier
 %type <declaration_indirections> declaration_indirections
+%type <declaration_struct_field_list> declaration_struct_field_list 
 
 %right '='
 %left TOK_OP_OR
@@ -165,10 +168,17 @@ expr : TOK_NUMBER { $$ = create_const_expression($1); }
 
 declaration : declaration_modifier declaration { $$ = declaration_add_modifier($2, $1); }
 	    | declaration_primitive { $$ = $1; };
+	    | declaration_struct { $$ = $1; };
 	    ;
 
 declaration_primitive : declaration_type declaration_indirections TOK_IDENTIFIER { install_symbol($3);
-	    				$$ = create_declaration($1, $2, $3); }
+	    				$$ = create_declaration_primitive($1, $2, $3); }
+
+declaration_struct : TOK_STRUCT TOK_IDENTIFIER '{' declaration_struct_field_list '}' { $$ = create_declaration_struct($2, $4); }
+
+declaration_struct_field_list : declaration_struct_field_list declaration ';' { $$ = declaration_create_field($2, $1); }
+			      | declaration ';' { $$ = declaration_create_field($1, NULL); }
+			      ;
 
 declaration_type : TOK_CHAR { $$ = DECLARATION_TYPE_BASE_TYPE_CHAR; }
 		 | TOK_INT { $$ = DECLARATION_TYPE_BASE_TYPE_INT; }

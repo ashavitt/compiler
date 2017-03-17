@@ -95,7 +95,6 @@ cleanup:
 }
 
 statement_declaration_t * create_declaration(
-	declaration_type_base_type_primitive_t type,
 	unsigned long indirections_count,
 	const char * identifier)
 {
@@ -120,11 +119,6 @@ statement_declaration_t * create_declaration(
 
 	new_decl->identifier = identifier_copy;
 
-	new_decl->type.type_base = DECLARATION_TYPE_BASE_PRIMITIVE;
-	new_decl->type.type_base_type = (declaration_type_base_type_t) {
-		.is_primitive = true,
-		.primitive = type
-	};
 	new_decl->type.deref_count = indirections_count;
 	new_decl->type.modifier = (declaration_type_modifier_t) {
 		.is_const = false,
@@ -146,6 +140,47 @@ cleanup:
 	return NULL;
 }
 
+statement_declaration_t * create_declaration_primitive(
+	declaration_type_base_type_primitive_t type,
+	unsigned long indirections_count,
+	const char * identifier)
+{
+	statement_declaration_t * new_decl = NULL;
+
+	new_decl = create_declaration(indirections_count, identifier);
+	if (NULL == new_decl)
+	{
+		return NULL;
+	}
+
+	new_decl->type.type_base = DECLARATION_TYPE_BASE_PRIMITIVE;
+	new_decl->type.type_base_type = (declaration_type_base_type_t) {
+		.is_primitive = true,
+		.primitive = type
+	};
+	return new_decl;
+}
+
+statement_declaration_t * create_declaration_struct(
+	const char * identifier,
+	field_t * fields)
+{
+	statement_declaration_t * new_decl = NULL;
+
+	new_decl = create_declaration(0, identifier);
+	if (NULL == new_decl)
+	{
+		return NULL;
+	}
+
+	new_decl->type.type_base = DECLARATION_TYPE_BASE_STRUCT;
+	new_decl->type.type_base_type = (declaration_type_base_type_t) {
+		.is_primitive = false,
+		.fields = fields
+	};
+	return new_decl;
+}
+
 statement_declaration_t * declaration_add_modifier(
 	statement_declaration_t * declaration,
 	declaration_type_modifier_t modifier)
@@ -156,4 +191,24 @@ statement_declaration_t * declaration_add_modifier(
 	old_modifiers->is_unsigned = old_modifiers->is_unsigned || modifier.is_unsigned;
 	old_modifiers->is_register = old_modifiers->is_register || modifier.is_register;
 	return declaration;
+}
+
+field_t * declaration_create_field(
+	statement_declaration_t * declaration,
+	field_t * next_fields)
+{
+	field_t * new_field = malloc(sizeof(*new_field));
+	if (NULL == new_field)
+	{
+		goto cleanup;
+	}
+
+	new_field->next = next_fields;
+	new_field->declaration = declaration;
+
+cleanup:
+	/* TODO free declaration */
+	free(declaration);
+	/* TODO free next_fields */
+	return NULL;
 }
