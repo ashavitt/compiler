@@ -101,22 +101,63 @@ void debug_expression(statement_expression_t * expr, int offset)
 	}
 }
 
+char* get_primitive_string(declaration_type_base_type_primitive_t primitive) {
+    switch (primitive) {
+        case DECLARATION_TYPE_BASE_TYPE_INT:
+            return "int";
+        case DECLARATION_TYPE_BASE_TYPE_CHAR:
+            return "char";
+        case DECLARATION_TYPE_BASE_TYPE_LONG:
+            return "long";
+        case DECLARATION_TYPE_BASE_TYPE_LONG_LONG:
+            return "long long";
+        case DECLARATION_TYPE_BASE_TYPE_SHORT:
+            return "short";
+    }
+    return "Unknown primitive, internal error";
+}
+
+void print_declaration(declaration_type_t * declaration) {
+    unsigned long deref_count = declaration->deref_count;
+
+    if (declaration->modifier.is_const) {
+        printf("const ");
+    }
+    if (declaration->modifier.is_unsigned) {
+        printf("unsigned ");
+    }
+    if (declaration->modifier.is_volatile) {
+        printf("volatile ");
+    }
+    if (declaration->modifier.is_register) {
+        printf("register ");
+    }
+
+    if (declaration->type_base == DECLARATION_TYPE_BASE_PRIMITIVE) {
+        printf("%s ", get_primitive_string(declaration->type_base_type.primitive));
+    }
+    else if (declaration->type_base == DECLARATION_TYPE_BASE_STRUCT ||
+             declaration->type_base == DECLARATION_TYPE_BASE_ENUM ||
+             declaration->type_base == DECLARATION_TYPE_BASE_CUSTOM_TYPE
+    ) {
+        printf("%s ", declaration->type_base_type.type);
+    }
+    else {
+        printf("Unknown type, internal error");
+        return;
+    }
+
+    while (deref_count > 0) {
+        printf("*");
+        --deref_count;
+    }
+}
+
 void debug_declaration(statement_t * declaration, int offset)
 {
 	statement_declaration_t decl = declaration->declaration;
 	printf("%*sDeclaration type: ", offset * debug_shift_width, "");
-	switch (decl.type)
-	{
-		case DECL_CHAR:
-			printf("char");
-			break;
-		case DECL_INT:
-			printf("int");
-			break;
-		case DECL_LONG:
-			printf("long");
-			break;
-	}
+    print_declaration(&decl.type);
 	printf("\n%*sDeclaration identifier: %s\n", offset * debug_shift_width, "", decl.identifier);
 }
 
