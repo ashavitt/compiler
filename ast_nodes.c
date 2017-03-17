@@ -144,3 +144,15 @@ cleanup:
 	}
 	return NULL;
 }
+
+statement_declaration_t * declaration_add_modifier(
+	statement_declaration_t * declaration,
+	declaration_type_modifier_t modifier)
+{
+	declaration_type_modifier_t * old_modifiers =  &declaration->type.modifier;
+	old_modifier->is_const ||= modifier.is_const;
+	old_modifier->is_volatile ||= modifier.is_volatile;
+	old_modifier->is_unsigned ||= modifier.is_unsigned;
+	old_modifier->is_register ||= modifier.is_register;
+	return declaration;
+}
