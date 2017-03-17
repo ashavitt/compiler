@@ -28,8 +28,8 @@ statement_loop_t * create_loop_statement(
 	statement_expression_t * init_expression,
 	statement_expression_t * condition_expression,
 	statement_expression_t * iteration_expression,
-	code_block_t * loop_body)
-{
+	code_block_t * loop_body
+) {
 	statement_loop_t * new_loop = NULL;
 
 	new_loop = (statement_loop_t *) malloc (sizeof(*new_loop));
