@@ -132,9 +132,9 @@ void print_declaration(declaration_type_t * declaration, int offsets);
 
 void print_fields(field_t *fields, int offset) {
     while (fields != NULL) {
-        printf("%*s%s", offset * debug_shift_width, "", fields->declaration->identifier);
+        printf("%*s", offset * debug_shift_width, "");
         print_declaration(&fields->declaration->type, offset);
-        printf(";\n");
+        printf(" %s;\n", fields->declaration->identifier);
         fields = fields->next;
     }
 }
