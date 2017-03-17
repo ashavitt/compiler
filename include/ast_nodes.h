@@ -1,6 +1,8 @@
 #ifndef __AST_NODES_H__
 #define __AST_NODES_H__
 
+#include <stdbool.h>
+
 /* Structs and functions regarding the operations in C without flow control */
 
 typedef struct expression_op expression_op_t;
@@ -60,22 +62,57 @@ statement_expression_t * create_op_expression(
 	statement_expression_t * exp3);
 
 statement_expression_t * create_const_expression(
-	long value);
+	long value
+);
 
 statement_expression_t * create_identifier_expression(
-	const char * identifier);
+	const char * identifier
+);
 
+typedef enum declaration_type_base_e {
+    DECLARATION_TYPE_BASE_PRIMITIVE,
+    DECLARATION_TYPE_BASE_STRUCT,
+    DECLARATION_TYPE_BASE_ENUM,
+    DECLARATION_TYPE_BASE_CUSTOM_TYPE
+} declaration_type_base_t;
 
-typedef enum declaration_type
+typedef struct declaration_type_modifier_s {
+    bool is_const;
+    bool is_volatile;
+    bool is_unsigned;
+    bool is_register;
+} declaration_type_modifier_t;
+
+typedef enum declaration_type_base_type_primitive_e {
+    DECLARATION_TYPE_BASE_TYPE_INT,
+    DECLARATION_TYPE_BASE_TYPE_SHORT,
+    DECLARATION_TYPE_BASE_TYPE_LONG,
+    DECLARATION_TYPE_BASE_TYPE_LONG_LONG,
+    DECLARATION_TYPE_BASE_TYPE_CHAR
+} declaration_type_base_type_primitive_t;
+
+typedef struct declaration_type_base_type {
+    bool is_primitive;
+    union {
+        declaration_type_base_type_primitive_t primitive;
+        char * type;
+    };
+};
+
+/*!
+ * TODO: add linkage type (static/extern)
+ */
+typedef struct declaration_type_s
 {
-	DECL_CHAR,
-	DECL_INT,
-	DECL_LONG
-} declaration_type_e;
+    declaration_type_base_t base_type;
+    char * base_type;
+    unsigned long deref_count;
+    declaration_type_modifier_t modifier;
+} declaration_type_t;
 
 typedef struct statement_declaration
 {
-	declaration_type_e type;
+    declaration_type_t type;
 	char * identifier;
 } statement_declaration_t;
 
