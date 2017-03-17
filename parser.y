@@ -65,6 +65,7 @@ declaration_type_e declaration_type;
 
 %start file
 %token TOK_CHAR TOK_INT TOK_LONG
+%token TOK_SIGNED TOK_UNSIGNED
 %token TOK_IF TOK_ELSE
 %token TOK_EQUAL TOK_OP_OR TOK_OP_AND
 %token TOK_SHIFT_LEFT TOK_SHIFT_RIGHT

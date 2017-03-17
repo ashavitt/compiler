@@ -11,6 +11,8 @@ IDENTIFIER		[a-zA-Z][a-zA-Z0-9_]*
 char			{return TOK_CHAR;}
 int			{return TOK_INT;}
 long			{return TOK_LONG;}
+signed			{return TOK_SIGNED;}
+unsigend		{return TOK_UNSIGNED;}
 if			{return TOK_IF;}
 else			{return TOK_ELSE;}
 {IDENTIFIER}		{
