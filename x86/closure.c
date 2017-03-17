@@ -1,4 +1,31 @@
 #include <x86/closure.h>
+#include <string.h>
+#include <stdlib.h>
+
+variable_t * lookup_expression_result(statement_expression_t * expression, closure_t * closure) {
+    variable_t * current_variable = closure->variables;
+
+    while (current_variable != NULL) {
+        if (current_variable->evaluated_expression == expression) {
+            return current_variable;
+        }
+        current_variable = current_variable->next;
+    }
+
+    return NULL;
+}
+
+variable_t * get_variable(closure_t * closure, char * identifier) {
+    variable_t * current_variable = closure->variables;
+    while (current_variable != NULL) {
+        if (0 == strcmp(current_variable->variable_name, identifier)) {
+            return current_variable;
+        }
+        current_variable = current_variable->next;
+    }
+
+    return NULL;
+}
 
 variable_t * allocate_variable(closure_t * closure, size_t size, char * identifier, value_type_e type) {
     variable_t * new_variable = malloc(sizeof(*new_variable));

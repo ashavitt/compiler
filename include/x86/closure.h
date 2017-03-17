@@ -82,10 +82,22 @@ variable_t * allocate_variable(
 	closure_t * closure,
 	size_t size,
 	char * identifier,
-	value_type_e type);
+	value_type_e type
+);
 
 void add_instruction_to_closure(
 	asm_node_t * node,
-	closure_t * closure);
+	closure_t * closure
+);
+
+variable_t * lookup_expression_result(
+    statement_expression_t * expression,
+    closure_t * closure
+);
+
+variable_t * get_variable(
+    closure_t * closure,
+    char * identifier
+);
 
 #endif

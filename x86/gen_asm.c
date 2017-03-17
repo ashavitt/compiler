@@ -1,42 +1,19 @@
 #include <x86/gen_asm.h>
 #include <x86/closure.h>
-#include <stdbool.h>
-#include <stdint.h>
-#include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 #include <stdio.h>
 
 bool generate_expression(statement_expression_t * expression, closure_t * closure);
 
-variable_t * get_variable(closure_t * closure, char * identifier) {
-    variable_t * current_variable = closure->variables;
-    while (current_variable != NULL) {
-        if (0 == strcmp(current_variable->variable_name, identifier)) {
-            return current_variable;
-        }
-        current_variable = current_variable->next;
-    }
-
-    /* TODO: handle error */
-    return NULL;
-}
-
-variable_t * lookup_expression_result(statement_expression_t * expression, closure_t * closure) {
-    variable_t * current_variable = closure->variables;
-
-    while (current_variable != NULL) {
-        if (current_variable->evaluated_expression == expression) {
-            return current_variable;
-        }
-        current_variable = current_variable->next;
-    }
-
-    return NULL;
-}
-
 bool load_from_stack(variable_t * variable, closure_t * closure, register_e target_register) {
-    asm_node_t * node = malloc(sizeof(*node));
+    asm_node_t * node = NULL;
+
+    if (NULL == variable) {
+        return false;
+    }
+
+    node = malloc(sizeof(*node));
     if (NULL == node) {
         return false;
     }
@@ -102,10 +79,19 @@ variable_t * allocate_variable_from_destination(statement_expression_t * dst_exp
 
 bool generate_assignment(statement_expression_t * expression, closure_t * closure) {
     expression_op_t * assignment = &expression->exp_op;
-    /* TODO: error handling when left side is not variable */
+
+    /* we are yet to handle non-variable lvalues */
+    if (assignment->exp1->type != EXPRESSION_TYPE_IDENTIFIER) {
+        return false;
+    }
+
     variable_t * assigned_variable = get_variable(closure, assignment->exp1->identifier);
+    if (NULL == assigned_variable) {
+        return false;
+    }
+
     asm_node_t * node = malloc(sizeof(*node));
-    if (NULL == node || assigned_variable == NULL) {
+    if (NULL == node) {
         return false;
     }
 
