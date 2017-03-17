@@ -135,4 +135,9 @@ statement_declaration_t * create_declaration(
 	const char * identifier
 );
 
+statement_declaration_t * declaration_add_modifier(
+	statement_declaration_t * declaration,
+	declaration_type_modifier_t modifier
+);
+
 #endif
