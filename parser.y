@@ -66,7 +66,7 @@ declaration_type_modifier_t declaration_modifier;
 
 %start file
 %token TOK_CHAR TOK_INT TOK_LONG
-%token TOK_SIGNED TOK_UNSIGNED
+%token TOK_SIGNED TOK_UNSIGNED TOK_CONST TOK_VOLATILE TOK_REGISTER
 %token TOK_IF TOK_ELSE
 %token TOK_EQUAL TOK_OP_OR TOK_OP_AND
 %token TOK_SHIFT_LEFT TOK_SHIFT_RIGHT
@@ -144,7 +144,7 @@ expr : TOK_NUMBER { $$ = create_const_expression($1); }
      ;
 
 declaration : declaration_modifier declaration { $$ = declaration_add_modifier($2, $1); }
-	    | declaration_primitive { $$ = $1 };
+	    | declaration_primitive { $$ = $1; };
 	    ;
 
 declaration_primitive : declaration_type TOK_IDENTIFIER { install_symbol($2);
@@ -156,8 +156,11 @@ declaration_type : TOK_CHAR { $$ = DECLARATION_TYPE_BASE_TYPE_CHAR; }
 		 ;
 
 declaration_modifier : TOK_SIGNED { $$ = (declaration_type_modifier_t) {}; }
-	 | TOK_UNSIGNED { $$ = (declaration_type_modifier_t) { .is_unsigned = true}; }
-	 ;
+		     | TOK_UNSIGNED { $$ = (declaration_type_modifier_t) { .is_unsigned = true}; }
+		     | TOK_CONST { $$ = (declaration_type_modifier_t) { .is_const = true}; }
+		     | TOK_VOLATILE { $$ = (declaration_type_modifier_t) { .is_volatile = true}; }
+		     | TOK_REGISTER { $$ = (declaration_type_modifier_t) { .is_register = true}; }
+		     ;
 
 %%
 

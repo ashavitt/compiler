@@ -13,6 +13,9 @@ int			{return TOK_INT;}
 long			{return TOK_LONG;}
 signed			{return TOK_SIGNED;}
 unsigend		{return TOK_UNSIGNED;}
+const			{return TOK_CONST;}
+volatile		{return TOK_VOLATILE;}
+register		{return TOK_REGISTER;}
 if			{return TOK_IF;}
 else			{return TOK_ELSE;}
 {IDENTIFIER}		{
