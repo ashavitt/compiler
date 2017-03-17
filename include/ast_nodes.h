@@ -91,13 +91,13 @@ typedef enum declaration_type_base_type_primitive_e {
     DECLARATION_TYPE_BASE_TYPE_CHAR
 } declaration_type_base_type_primitive_t;
 
-typedef struct declaration_type_base_type {
+typedef struct declaration_type_base_type_s {
     bool is_primitive;
     union {
         declaration_type_base_type_primitive_t primitive;
         char * type;
     };
-};
+} declaration_type_base_type_t;
 
 /*!
  * TODO: add linkage type (static/extern)
@@ -105,7 +105,7 @@ typedef struct declaration_type_base_type {
 typedef struct declaration_type_s
 {
     declaration_type_base_t base_type;
-    char * base_type;
+    declaration_type_base_type_t base_type;
     unsigned long deref_count;
     declaration_type_modifier_t modifier;
 } declaration_type_t;
