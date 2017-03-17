@@ -119,6 +119,7 @@ typedef struct statement_declaration
 
 statement_declaration_t * create_declaration(
 	declaration_type_base_type_primitive_t type,
-	const char * identifier);
+	const char * identifier
+);
 
 #endif

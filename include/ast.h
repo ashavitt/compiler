@@ -1,10 +1,10 @@
 #ifndef __AST_H__
 #define __AST_H__
 
+typedef struct code_block code_block_t;
+
 #include "ast_nodes.h"
 #include "ast_flow.h"
-
-typedef struct code_block code_block_t;
 
 typedef enum statement_type
 {

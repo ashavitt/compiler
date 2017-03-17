@@ -60,7 +60,7 @@ code_block_t * code_block;
 statement_expression_t * statement_expression;
 statement_declaration_t * statement_declaration;
 statement_ifelse_t * statement_ifelse;
-declaration_type_e declaration_type;
+declaration_type_t declaration_type;
 }
 
 %start file
