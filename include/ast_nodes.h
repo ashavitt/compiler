@@ -119,6 +119,7 @@ struct declaration_type_s
     declaration_type_base_type_t type_base_type;
     unsigned long deref_count;
     declaration_type_modifier_t modifier;
+    long enum_value;
 };
 
 struct statement_declaration

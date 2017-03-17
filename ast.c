@@ -128,30 +128,30 @@ char* get_primitive_string(declaration_type_base_type_primitive_t primitive) {
     return "Unknown primitive, internal error";
 }
 
-void print_declaration(declaration_type_t * declaration);
+void print_declaration(declaration_type_t * declaration, int offsets);
 
-void print_fields(field_t *fields) {
+void print_fields(field_t *fields, int offset) {
     while (fields != NULL) {
-        printf("%s", fields->name);
-        print_declaration(fields->field_type);
+        printf("%*s%s", offset * debug_shift_width, "", fields->declaration->identifier);
+        print_declaration(&fields->declaration->type, offset);
         printf(";\n");
         fields = fields->next;
     }
 }
 
-void print_enum_fields(field_t *fields) {
+void print_enum_fields(field_t *fields, int offset) {
     while (fields != NULL) {
         if (fields->next != NULL) {
-            printf("%s = %lu,\n", fields->name, fields->enum_value);
+            printf("%*s%s = %lu,\n", offset * debug_shift_width, "", fields->declaration->identifier, fields->declaration->type.enum_value);
         }
         else{
-            printf("%s = %lu\n", fields->name, fields->enum_value);
+            printf("%*s%s = %lu\n", offset * debug_shift_width, "", fields->declaration->identifier, fields->declaration->type.enum_value);
         }
         fields = fields->next;
     }
 }
 
-void print_declaration(declaration_type_t * declaration) {
+void print_declaration(declaration_type_t * declaration, int offset) {
     unsigned long deref_count = declaration->deref_count;
 
     if (declaration->modifier.is_const) {
@@ -172,19 +172,19 @@ void print_declaration(declaration_type_t * declaration) {
     }
     else if (declaration->type_base == DECLARATION_TYPE_BASE_STRUCT) {
         printf("struct { \n");
-        print_fields(declaration->type_base_type.fields);
-        printf("}");
+        print_fields(declaration->type_base_type.fields, offset+1);
+        printf("%*s};", offset * debug_shift_width, "");
     } else if (declaration->type_base == DECLARATION_TYPE_BASE_UNION) {
         printf("union { \n");
-        print_fields(declaration->type_base_type.fields);
-        printf("}");
+        print_fields(declaration->type_base_type.fields, offset+1);
+        printf("%*s};", offset * debug_shift_width, "");
     } else if (declaration->type_base == DECLARATION_TYPE_BASE_ENUM) {
         printf("enum { \n");
-        print_enum_fields(declaration->type_base_type.fields);
-        printf("}");
+        print_enum_fields(declaration->type_base_type.fields, offset+1);
+        printf("%*s};", offset * debug_shift_width, "");
     } else if (declaration->type_base == DECLARATION_TYPE_BASE_CUSTOM_TYPE) {
         printf("(");
-        print_declaration(declaration->type_base_type.typedef_type);
+        print_declaration(declaration->type_base_type.typedef_type, offset);
         printf(")");
     }
     else {
@@ -202,7 +202,7 @@ void debug_declaration(statement_t * declaration, int offset)
 {
 	statement_declaration_t decl = declaration->declaration;
 	printf("%*sDeclaration type: ", offset * debug_shift_width, "");
-    print_declaration(&decl.type);
+    print_declaration(&decl.type, offset);
 	printf("\n%*sDeclaration identifier: %s\n", offset * debug_shift_width, "", decl.identifier);
 }
 

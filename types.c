@@ -95,7 +95,7 @@ bool add_type(
     new_type->next = *space_to_insert_to;
     new_type->declaration_type = type;
 
-    new_type->size = calculate_size(type);
+    new_type->size = calculate_size(type_space, type);
     /* internal error */
     if (new_type->size == 0) {
         free(new_type);
