@@ -59,7 +59,8 @@ statement_expression_t * create_op_expression(
 	operator_type_e op,
 	statement_expression_t * exp1,
 	statement_expression_t * exp2,
-	statement_expression_t * exp3);
+	statement_expression_t * exp3
+);
 
 statement_expression_t * create_const_expression(
 	long value
