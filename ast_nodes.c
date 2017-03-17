@@ -96,6 +96,7 @@ cleanup:
 
 statement_declaration_t * create_declaration(
 	declaration_type_base_type_primitive_t type,
+	unsigned long indirections_count,
 	const char * identifier)
 {
 	statement_declaration_t * new_decl = NULL;
@@ -124,7 +125,7 @@ statement_declaration_t * create_declaration(
 		.is_primitive = true,
 		.primitive = type
 	};
-	new_decl->type.deref_count = 0;
+	new_decl->type.deref_count = indirections_count;
 	new_decl->type.modifier = (declaration_type_modifier_t) {
 		.is_const = false,
 		.is_volatile = false,

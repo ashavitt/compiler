@@ -16,6 +16,7 @@ unsigend		{return TOK_UNSIGNED;}
 const			{return TOK_CONST;}
 volatile		{return TOK_VOLATILE;}
 register		{return TOK_REGISTER;}
+struct			{return TOK_STRUCT;}
 if			{return TOK_IF;}
 else			{return TOK_ELSE;}
 for			{return TOK_FOR;}

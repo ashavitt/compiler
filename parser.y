@@ -63,10 +63,11 @@ statement_ifelse_t * statement_ifelse;
 statement_loop_t * statement_loop;
 declaration_type_base_type_primitive_t declaration_type;
 declaration_type_modifier_t declaration_modifier;
+unsigned long declaration_indirections;
 }
 
 %start file
-%token TOK_CHAR TOK_INT TOK_LONG
+%token TOK_CHAR TOK_INT TOK_LONG TOK_STRUCT
 %token TOK_SIGNED TOK_UNSIGNED TOK_CONST TOK_VOLATILE TOK_REGISTER
 %token TOK_IF TOK_ELSE TOK_FOR TOK_WHILE
 %token TOK_EQUAL TOK_OP_OR TOK_OP_AND
@@ -87,6 +88,7 @@ declaration_type_modifier_t declaration_modifier;
 %type <statement_loop> while_loop
 %type <declaration_type> declaration_type
 %type <declaration_modifier> declaration_modifier
+%type <declaration_indirections> declaration_indirections
 
 %right '='
 %left TOK_OP_OR
@@ -165,13 +167,17 @@ declaration : declaration_modifier declaration { $$ = declaration_add_modifier($
 	    | declaration_primitive { $$ = $1; };
 	    ;
 
-declaration_primitive : declaration_type TOK_IDENTIFIER { install_symbol($2);
-	    				$$ = create_declaration($1, $2); }
+declaration_primitive : declaration_type declaration_indirections TOK_IDENTIFIER { install_symbol($3);
+	    				$$ = create_declaration($1, $2, $3); }
 
 declaration_type : TOK_CHAR { $$ = DECLARATION_TYPE_BASE_TYPE_CHAR; }
 		 | TOK_INT { $$ = DECLARATION_TYPE_BASE_TYPE_INT; }
 		 | TOK_LONG { $$ = DECLARATION_TYPE_BASE_TYPE_LONG; }
 		 ;
+
+declaration_indirections : '*' declaration_indirections { $$ = $2 + 1; }
+			 | { $$ = 0; }
+			 ;
 
 declaration_modifier : TOK_SIGNED { $$ = (declaration_type_modifier_t) {}; }
 		     | TOK_UNSIGNED { $$ = (declaration_type_modifier_t) { .is_unsigned = true}; }
