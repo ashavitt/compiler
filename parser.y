@@ -9,6 +9,7 @@
 #include <symbol_table.h>
 #include <ast.h>
 #include <x86/gen_asm.h>
+#include <types.h>
 
 static int errors = 0;
 static int yydebug = 0;
@@ -198,10 +199,32 @@ declaration_modifier : TOK_SIGNED { $$ = (declaration_type_modifier_t) {}; }
 
 %%
 
+bool type_check(type_space_t *type_space, code_file_t *code_file) {
+    statement_t *current_statement = code_file->first_block->first_line;
+    while (current_statement != NULL) {
+        if (current_statement->statement_type == STATEMENT_TYPE_DECLARATION) {
+            if (!add_type(type_space, &current_statement->declaration)) {
+                return false;
+            }
+        }
+        current_statement = current_statement->next;
+    }
+
+    return true;
+}
+
+/* TODO: kill amir, there's not difference between type declaration statement and variable declaration statement */
 int main(int argc, char * argv[])
 {
+    type_space_t *type_space = create_empty_type_space();
 	extern FILE * yyin;
 	code_file_t code_file = { 0 };
+
+    if (type_space == NULL) {
+        printf("Failed allocating typespace\n");
+        return -1;
+    }
+
 	argv++;
 	argc--;
 	yyin = fopen(argv[0], "r");
@@ -209,6 +232,10 @@ int main(int argc, char * argv[])
 	errors = 0;
 	yyparse(&code_file);
 	debug_ast(&code_file);
+	if (!type_check(type_space, &code_file)) {
+        printf("Type check did not pass!\n");
+    }
+    /* TODO: pass typespace to generate assembly */
 	printf("ASSEMBLY:\n");
     if(!gen_asm_x86(&code_file, 1)) {
         printf("\nFailed generating assembly!\n");

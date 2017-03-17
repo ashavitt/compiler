@@ -27,6 +27,6 @@ bool add_type(
     statement_declaration_t *declaration
 );
 
-type_space_t * create_empty_space();
+type_space_t * create_empty_type_space();
 
 #endif

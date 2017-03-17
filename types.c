@@ -39,7 +39,7 @@ type_t *lookup_type(
 static unsigned long calculate_size(type_space_t *type_space, declaration_type_t *type);
 
 static unsigned long align(unsigned long size) {
-    return (4 - (size % 4)) + size;
+    return size + (size % 4 == 0 ? 0 : 4 - (size % 4));
 }
 
 static unsigned long calculate_union_size(type_space_t *type_space, declaration_type_t *type) {
@@ -77,9 +77,9 @@ static unsigned long calculate_size(type_space_t *type_space, declaration_type_t
             /* assuming all primitive are already aligned.. */
             return lookup_type(type_space, get_primitive_string(type->type_base_type.primitive))->size;
         case DECLARATION_TYPE_BASE_CUSTOM_TYPE:
-            return calculate_size(type_space, type->type_base_type.typedef_type));
+            return calculate_size(type_space, type->type_base_type.typedef_type);
         case DECLARATION_TYPE_BASE_STRUCT:
-            return calculate_struct_size(type_space, type));
+            return calculate_struct_size(type_space, type);
         case DECLARATION_TYPE_BASE_ENUM:
             return 4; /* int size :) */
         case DECLARATION_TYPE_BASE_UNION:
@@ -149,7 +149,7 @@ static bool add_primitive(
     return true;
 }
 
-type_space_t * create_empty_space() {
+type_space_t * create_empty_type_space() {
     type_space_t *empty_space = malloc(sizeof(*empty_space));
     type_t *current_type = NULL;
     if (NULL == empty_space) {
