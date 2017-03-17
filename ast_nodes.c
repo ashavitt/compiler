@@ -95,7 +95,7 @@ cleanup:
 }
 
 statement_declaration_t * create_declaration(
-	declaration_type_e type,
+	declaration_type_base_type_primitive_t type,
 	const char * identifier)
 {
 	statement_declaration_t * new_decl = NULL;
@@ -117,8 +117,15 @@ statement_declaration_t * create_declaration(
 
 	strncpy(identifier_copy, identifier, identifier_len);
 
-	new_decl->type = type;
+	new_decl->base_type = type;
 	new_decl->identifier = identifier_copy;
+	new_decl->deref_count = 0;
+	new_decl->modifier = (declaration_type_modifier_t) {
+		.is_const = false,
+		.is_volatile = false,
+		.is_unsigned = false,
+		.is_register = false
+	};
 
 	return new_decl;
 cleanup:

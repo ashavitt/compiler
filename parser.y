@@ -142,9 +142,9 @@ expr : TOK_NUMBER { $$ = create_const_expression($1); }
 declaration : declaration_type TOK_IDENTIFIER { install_symbol($2);
 	    				$$ = create_declaration($1, $2); }
 
-declaration_type : TOK_CHAR { $$ = DECL_CHAR; }
-		 | TOK_INT { $$ = DECL_INT; }
-		 | TOK_LONG { $$ = DECL_LONG; }
+declaration_type : TOK_CHAR { $$ = DECLARATION_TYPE_BASE_TYPE_CHAR; }
+		 | TOK_INT { $$ = DECLARATION_TYPE_BASE_TYPE_INT; }
+		 | TOK_LONG { $$ = DECLARATION_TYPE_BASE_TYPE_LONG; }
 		 ;
 
 %%
