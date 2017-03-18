@@ -94,10 +94,56 @@ cleanup:
 	return NULL;
 }
 
+statement_type_declaration_t * create_type_delcaration(
+    unsigned long indirections_count,
+    const char * identifier
+) {
+    statement_type_declaration_t * new_decl = NULL;
+    char * identifier_copy = NULL;
+    size_t identifier_len = 0;
+
+    new_decl = (statement_type_declaration_t *) malloc (sizeof(statement_type_declaration_t));
+    if (NULL == new_decl)
+    {
+        goto cleanup;
+    }
+
+    identifier_len = strlen(identifier);
+    identifier_copy = (char *) malloc (sizeof(char) * identifier_len);
+    if (NULL == identifier_copy)
+    {
+        goto cleanup;
+    }
+
+    strncpy(identifier_copy, identifier, identifier_len);
+
+    new_decl->type_name = identifier_copy;
+
+    new_decl->type.deref_count = indirections_count;
+    new_decl->type.modifier = (declaration_type_modifier_t) {
+            .is_const = false,
+            .is_volatile = false,
+            .is_unsigned = false,
+            .is_register = false
+    };
+
+    return new_decl;
+cleanup:
+    if (NULL != new_decl)
+    {
+        free(new_decl);
+    }
+    if (NULL != identifier_copy)
+    {
+        free(identifier_copy);
+    }
+    return NULL;
+}
+
 statement_declaration_t * create_declaration(
 	unsigned long indirections_count,
-	const char * identifier)
-{
+	const char * identifier
+) {
 	statement_declaration_t * new_decl = NULL;
 	char * identifier_copy = NULL;
 	size_t identifier_len = 0;
@@ -141,7 +187,7 @@ cleanup:
 }
 
 statement_declaration_t * create_declaration_primitive(
-	declaration_type_base_type_primitive_t type,
+	char * type_identifier,
 	unsigned long indirections_count,
 	const char * identifier)
 {
@@ -156,18 +202,18 @@ statement_declaration_t * create_declaration_primitive(
 	new_decl->type.type_base = DECLARATION_TYPE_BASE_PRIMITIVE;
 	new_decl->type.type_base_type = (declaration_type_base_type_t) {
 		.is_primitive = true,
-		.primitive = type
+		.identifier = type_identifier
 	};
 	return new_decl;
 }
 
-statement_declaration_t * create_declaration_struct(
-	const char * identifier,
-	field_t * fields)
-{
-	statement_declaration_t * new_decl = NULL;
+statement_type_declaration_t * create_declaration_struct(
+    const char * struct_name,
+    field_t * fields
+) {
+    statement_type_declaration_t * new_decl = NULL;
 
-	new_decl = create_declaration(0, identifier);
+	new_decl = create_type_delcaration(0, struct_name);
 	if (NULL == new_decl)
 	{
 		return NULL;
@@ -175,10 +221,23 @@ statement_declaration_t * create_declaration_struct(
 
 	new_decl->type.type_base = DECLARATION_TYPE_BASE_STRUCT;
 	new_decl->type.type_base_type = (declaration_type_base_type_t) {
+        .identifier = (char*)struct_name,
 		.is_primitive = false,
 		.fields = fields
 	};
 	return new_decl;
+}
+
+statement_type_declaration_t * type_declaration_add_modifier(
+    statement_type_declaration_t * declaration,
+    declaration_type_modifier_t modifier
+) {
+    declaration_type_modifier_t * old_modifiers =  &declaration->type.modifier;
+    old_modifiers->is_const = old_modifiers->is_const || modifier.is_const;
+    old_modifiers->is_volatile = old_modifiers->is_volatile || modifier.is_volatile;
+    old_modifiers->is_unsigned = old_modifiers->is_unsigned || modifier.is_unsigned;
+    old_modifiers->is_register = old_modifiers->is_register || modifier.is_register;
+    return declaration;
 }
 
 statement_declaration_t * declaration_add_modifier(

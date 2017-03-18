@@ -46,6 +46,17 @@ statement_t * create_statement_declaration(statement_declaration_t * decl)
 	return stmt;
 }
 
+statement_t * create_statement_type_declaration(statement_type_declaration_t * decl)
+{
+	statement_t * stmt = create_statement(STATEMENT_TYPE_TYPE_DECLARATION);
+	if (NULL == stmt)
+	{
+		return NULL;
+	}
+	stmt->type_declaration = *decl;
+	return stmt;
+}
+
 statement_t * create_statement_ifelse(statement_ifelse_t * ifelse)
 {
 	statement_t * stmt = create_statement(STATEMENT_TYPE_IFELSE);
@@ -112,22 +123,6 @@ void debug_expression(statement_expression_t * expr, int offset)
 	}
 }
 
-char* get_primitive_string(declaration_type_base_type_primitive_t primitive) {
-    switch (primitive) {
-        case DECLARATION_TYPE_BASE_TYPE_INT:
-            return "int";
-        case DECLARATION_TYPE_BASE_TYPE_CHAR:
-            return "char";
-        case DECLARATION_TYPE_BASE_TYPE_LONG:
-            return "long";
-        case DECLARATION_TYPE_BASE_TYPE_LONG_LONG:
-            return "long long";
-        case DECLARATION_TYPE_BASE_TYPE_SHORT:
-            return "short";
-    }
-    return "Unknown primitive, internal error";
-}
-
 void print_declaration(declaration_type_t * declaration, int offsets);
 
 void print_fields(field_t *fields, int offset) {
@@ -168,7 +163,7 @@ void print_declaration(declaration_type_t * declaration, int offset) {
     }
 
     if (declaration->type_base == DECLARATION_TYPE_BASE_PRIMITIVE) {
-        printf("%s ", get_primitive_string(declaration->type_base_type.primitive));
+        printf("%s ", declaration->type_base_type.identifier);
     }
     else if (declaration->type_base == DECLARATION_TYPE_BASE_STRUCT) {
         printf("struct { \n");
@@ -196,6 +191,14 @@ void print_declaration(declaration_type_t * declaration, int offset) {
         printf("*");
         --deref_count;
     }
+}
+
+void debug_type_declaration(statement_t * declaration, int offset)
+{
+    statement_type_declaration_t decl = declaration->type_declaration;
+    printf("%*sType Declaration type: ", offset * debug_shift_width, "");
+    print_declaration(&decl.type, offset);
+    printf("\n%*sType Declaration identifier: %s\n", offset * debug_shift_width, "", decl.type_name);
 }
 
 void debug_declaration(statement_t * declaration, int offset)
@@ -250,6 +253,10 @@ void debug_code_block(
 		printf("%*sStatement type: ", offset * debug_shift_width, "");
 		switch(statement->statement_type)
 		{
+            case STATEMENT_TYPE_TYPE_DECLARATION:
+                printf("type declaration\n");
+                debug_type_declaration(statement, offset+1);
+                break;
 			case STATEMENT_TYPE_DECLARATION:
 				printf("declaration\n");
 				debug_declaration(statement, offset + 1);

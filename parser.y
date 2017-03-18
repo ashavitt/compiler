@@ -62,7 +62,8 @@ statement_expression_t * statement_expression;
 statement_declaration_t * statement_declaration;
 statement_ifelse_t * statement_ifelse;
 statement_loop_t * statement_loop;
-declaration_type_base_type_primitive_t declaration_type;
+statement_type_declaration_t * statement_type_declaration;
+char * declaration_type;
 declaration_type_modifier_t declaration_modifier;
 unsigned long declaration_indirections;
 field_t * declaration_struct_field_list;
@@ -83,7 +84,8 @@ field_t * declaration_struct_field_list;
 %type <statement_expression> expr
 %type <statement_expression> optional_expr
 %type <statement_declaration> declaration
-%type <statement_declaration> declaration_struct
+%type <statement_type_declaration> type_declaration
+%type <statement_type_declaration> declaration_struct
 %type <statement_declaration> declaration_primitive
 %type <statement_ifelse> ifelse
 %type <statement_loop> loop
@@ -92,7 +94,7 @@ field_t * declaration_struct_field_list;
 %type <declaration_type> declaration_type
 %type <declaration_modifier> declaration_modifier
 %type <declaration_indirections> declaration_indirections
-%type <declaration_struct_field_list> declaration_struct_field_list 
+%type <declaration_struct_field_list> declaration_struct_field_list
 
 %right '='
 %left TOK_OP_OR
@@ -123,6 +125,7 @@ lines : statement { code_block_t * code_block = malloc(sizeof(code_block_t));
       ;
 
 statement : expr ';' { $$ = create_statement_expression($1); }
+      | type_declaration ';' { $$ = create_statement_type_declaration($1); }
 	  | declaration ';' { $$ = create_statement_declaration($1); }
 	  | ifelse { $$ = create_statement_ifelse($1); }
 	  | loop { $$ = create_statement_loop($1); }
@@ -169,8 +172,11 @@ expr : TOK_NUMBER { $$ = create_const_expression($1); }
 
 declaration : declaration_modifier declaration { $$ = declaration_add_modifier($2, $1); }
 	    | declaration_primitive { $$ = $1; };
-	    | declaration_struct { $$ = $1; };
 	    ;
+
+type_declaration :  declaration_modifier type_declaration { $$ = type_declaration_add_modifier($2, $1); }
+        | declaration_struct { $$ = $1; };
+        ;
 
 declaration_primitive : declaration_type declaration_indirections TOK_IDENTIFIER { install_symbol($3);
 	    				$$ = create_declaration_primitive($1, $2, $3); }
@@ -181,9 +187,9 @@ declaration_struct_field_list : declaration_struct_field_list declaration ';' { 
 			      | declaration ';' { $$ = declaration_create_field($1, NULL); }
 			      ;
 
-declaration_type : TOK_CHAR { $$ = DECLARATION_TYPE_BASE_TYPE_CHAR; }
-		 | TOK_INT { $$ = DECLARATION_TYPE_BASE_TYPE_INT; }
-		 | TOK_LONG { $$ = DECLARATION_TYPE_BASE_TYPE_LONG; }
+declaration_type : TOK_CHAR { $$ = "char"; }
+		 | TOK_INT { $$ = "int"; }
+		 | TOK_LONG { $$ = "long"; }
 		 ;
 
 declaration_indirections : declaration_indirections '*' { $$ = $1 + 1; }
@@ -199,10 +205,11 @@ declaration_modifier : TOK_SIGNED { $$ = (declaration_type_modifier_t) {}; }
 
 %%
 
+/* TODO: add type check and include it from another file, we dont write real code here */
 bool type_check(type_space_t *type_space, code_file_t *code_file) {
     statement_t *current_statement = code_file->first_block->first_line;
     while (current_statement != NULL) {
-        if (current_statement->statement_type == STATEMENT_TYPE_DECLARATION) {
+        if (current_statement->statement_type == STATEMENT_TYPE_TYPE_DECLARATION) {
             if (!add_type(type_space, &current_statement->declaration)) {
                 return false;
             }
@@ -213,7 +220,6 @@ bool type_check(type_space_t *type_space, code_file_t *code_file) {
     return true;
 }
 
-/* TODO: kill amir, there's not difference between type declaration statement and variable declaration statement */
 int main(int argc, char * argv[])
 {
     type_space_t *type_space = create_empty_type_space();
@@ -230,7 +236,10 @@ int main(int argc, char * argv[])
 	yyin = fopen(argv[0], "r");
 	yydebug = 1;
 	errors = 0;
-	yyparse(&code_file);
+	if (0 != yyparse(&code_file)) {
+		return -1;
+	}
+
 	debug_ast(&code_file);
 	if (!type_check(type_space, &code_file)) {
         printf("Type check did not pass!\n");

@@ -8,6 +8,7 @@
 typedef struct expression_op expression_op_t;
 typedef struct statement_expression statement_expression_t;
 typedef struct statement_declaration statement_declaration_t;
+typedef struct statement_type_declaration statement_type_declaration_t;
 
 typedef enum expression_type
 {
@@ -103,8 +104,8 @@ typedef struct field_s {
 
 typedef struct declaration_type_base_type_s {
     bool is_primitive;
+    char *identifier;
     union {
-        declaration_type_base_type_primitive_t primitive;
         field_t *fields;
         struct declaration_type_s *typedef_type;
     };
@@ -128,20 +129,30 @@ struct statement_declaration
 	char * identifier;
 };
 
+struct statement_type_declaration {
+    char * type_name;
+    declaration_type_t type;
+};
+
 statement_declaration_t * create_declaration_primitive(
-	declaration_type_base_type_primitive_t type,
+	char * type_identifier,
 	unsigned long indirections_count,
 	const char * identifier
 );
 
-statement_declaration_t * create_declaration_struct(
-	const char * identifier,
+statement_type_declaration_t * create_declaration_struct(
+	const char * struct_name,
 	field_t * fields
 );
 
 statement_declaration_t * declaration_add_modifier(
 	statement_declaration_t * declaration,
 	declaration_type_modifier_t modifier
+);
+
+statement_type_declaration_t * type_declaration_add_modifier(
+    statement_type_declaration_t * declaration,
+    declaration_type_modifier_t modifier
 );
 
 field_t * declaration_create_field(

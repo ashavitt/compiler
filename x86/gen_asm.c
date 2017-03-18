@@ -2,6 +2,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <stdio.h>
+#include <x86/closure.h>
 
 bool generate_expression(statement_expression_t * expression, closure_t * closure);
 
@@ -427,7 +428,18 @@ bool print_operand(operand_e * operand, char * instruction_text, size_t instruct
 }
 
 bool generate_assembly_instruction(asm_node_t * instruction, char * instruction_text, size_t instruction_text_size, closure_t * closure) {
-	snprintf(instruction_text, instruction_text_size, "%s ", instruction_to_text[instruction->opcode]);
+	if (instruction->label_index != 0) {
+		snprintf(
+				instruction_text,
+				instruction_text_size,
+				"%s_%lu: %s ",
+				closure->closure_name,
+				instruction->label_index, instruction_to_text[instruction->opcode]
+		);
+	}
+	else {
+		snprintf(instruction_text, instruction_text_size, "%s ", instruction_to_text[instruction->opcode]);
+	}
 	if (instruction->operand1.type != OPERAND_TYPE_NONE) {
 		print_operand(&instruction->operand1, instruction_text, instruction_text_size, closure);
 		if (instruction->operand2.type != OPERAND_TYPE_NONE) {

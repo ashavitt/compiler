@@ -3,6 +3,29 @@
 #include <string.h>
 #include <ast.h>
 
+bool is_same_type(
+    type_t *first_type,
+    type_t *second_type
+) {
+    /* first the easy checks, pointers and different sizes */
+    if (first_type->size != second_type->size ||
+        first_type->declaration_type->deref_count != second_type->declaration_type->deref_count ||
+        first_type->declaration_type->modifier.is_volatile != second_type->declaration_type->modifier.is_volatile ||
+        first_type->declaration_type->modifier.is_register != second_type->declaration_type->modifier.is_register ||
+        first_type->declaration_type->modifier.is_const != second_type->declaration_type->modifier.is_const ||
+        first_type->declaration_type->modifier.is_unsigned != second_type->declaration_type->modifier.is_unsigned
+    ) {
+        return false;
+    }
+
+    /* apply typedef aliases before further checks */
+    if (first_type->declaration_type->type_base == DECLARATION_TYPE_BASE_CUSTOM_TYPE) {
+        /*first_type = first_type->declaration_type->type_base_type.typedef_type;*/
+    }
+
+    return false;
+}
+
 type_t *lookup_type(
     type_space_t *type_space,
     char * type_name
@@ -75,13 +98,13 @@ static unsigned long calculate_size(type_space_t *type_space, declaration_type_t
     switch(type->type_base) {
         case DECLARATION_TYPE_BASE_PRIMITIVE:
             /* assuming all primitive are already aligned.. */
-            return lookup_type(type_space, get_primitive_string(type->type_base_type.primitive))->size;
+            return lookup_type(type_space, type->type_base_type.identifier)->size;
         case DECLARATION_TYPE_BASE_CUSTOM_TYPE:
             return calculate_size(type_space, type->type_base_type.typedef_type);
         case DECLARATION_TYPE_BASE_STRUCT:
             return calculate_struct_size(type_space, type);
         case DECLARATION_TYPE_BASE_ENUM:
-            return lookup_type(type_space, get_primitive_string(DECLARATION_TYPE_BASE_TYPE_INT))->size;
+            return lookup_type(type_space, "int")->size;
         case DECLARATION_TYPE_BASE_UNION:
             return align(calculate_union_size(type_space, type));
     }
@@ -132,7 +155,7 @@ bool add_type(
 
 static bool add_primitive(
     type_space_t *type_space,
-    declaration_type_base_type_primitive_t primitive,
+    char * primitive_identifier,
     unsigned long size
 ) {
     type_t *current_type = NULL;
@@ -141,7 +164,7 @@ static bool add_primitive(
     if (NULL == current_type) {
         return false;
     }
-    current_type->name = get_primitive_string(primitive);
+    current_type->name = primitive_identifier;
     current_type->size = size;
     current_type->next = type_space->normal_space;
     current_type->declaration_type = NULL;
@@ -162,23 +185,23 @@ type_space_t * create_empty_type_space() {
 
     /* TODO: free recursively */
     /* initialize primitives */
-    if(!add_primitive(empty_space, DECLARATION_TYPE_BASE_TYPE_INT, 4)) {
+    if(!add_primitive(empty_space, "int", 4)) {
         return NULL;
     }
 
-    if(!add_primitive(empty_space, DECLARATION_TYPE_BASE_TYPE_CHAR, 1)) {
+    if(!add_primitive(empty_space, "char", 1)) {
         return NULL;
     }
 
-    if(!add_primitive(empty_space, DECLARATION_TYPE_BASE_TYPE_SHORT, 2)) {
+    if(!add_primitive(empty_space, "short", 2)) {
         return NULL;
     }
 
-    if(!add_primitive(empty_space, DECLARATION_TYPE_BASE_TYPE_LONG_LONG, 16)) {
+    if(!add_primitive(empty_space, "long long", 16)) {
         return NULL;
     }
 
-    if(!add_primitive(empty_space, DECLARATION_TYPE_BASE_TYPE_LONG, 8)) {
+    if(!add_primitive(empty_space, "long", 8)) {
         return NULL;
     }
 

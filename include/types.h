@@ -27,6 +27,11 @@ bool add_type(
     statement_declaration_t *declaration
 );
 
+bool is_same_type(
+    type_t *first_type,
+    type_t *second_type
+);
+
 type_space_t * create_empty_type_space();
 
 #endif
