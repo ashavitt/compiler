@@ -246,6 +246,10 @@ bool generate_ifelse(statement_ifelse_t * ifelse, closure_t * closure)
 	check_evaluated_expression = malloc(sizeof(*check_evaluated_expression));
 	jmp_over_if = malloc(sizeof(*jmp_over_if));
 
+    if(!generate_expression(ifelse->if_expr, closure)) {
+        return false;
+    }
+
 	if (!load_expression_to_register(ifelse->if_expr, closure, REGISTER_EAX))
 	{
 		return false;
