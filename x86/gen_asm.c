@@ -297,9 +297,11 @@ bool generate_ifelse(statement_ifelse_t * ifelse, closure_t * closure)
 		after_else_opcode->opcode = OPCODE_NOP;
 		add_instruction_to_closure(after_else_opcode, closure);
 		jmp_over_else->operand1.ref = after_else_opcode;
+		add_label_to_node(after_else_opcode, closure);
 	}
 	/* This is a little hack, set the jmp destination if the condition is not met */
 	jmp_over_if->operand1.ref = after_if_opcode;
+	add_label_to_node(after_if_opcode, closure);
 	return true;
 }
 
@@ -362,7 +364,7 @@ static char * register_to_text[] = {
 
 /* TODO: add error handling in this file */
 
-bool print_operand(operand_e * operand, char * instruction_text, size_t instruction_text_size) {
+bool print_operand(operand_e * operand, char * instruction_text, size_t instruction_text_size, closure_t * closure) {
 	char operand_text[256] = {0};
 	switch(operand->type) {
 		case OPERAND_TYPE_STACK_DWORD:
@@ -416,25 +418,27 @@ bool print_operand(operand_e * operand, char * instruction_text, size_t instruct
 			strncat(instruction_text, operand_text, instruction_text_size);
 			break;
 		case OPERAND_TYPE_REFERENCE:
+			snprintf(operand_text, sizeof(operand_text), "%s%lu", closure->closure_name, operand->ref->label_index);
+			strncat(instruction_text, operand_text, instruction_text_size);
 			break;
 		default:
 			return false;
 	}
 }
 
-bool generate_assembly_instruction(asm_node_t * instruction, char * instruction_text, size_t instruction_text_size) {
+bool generate_assembly_instruction(asm_node_t * instruction, char * instruction_text, size_t instruction_text_size, closure_t * closure) {
 	snprintf(instruction_text, instruction_text_size, "%s ", instruction_to_text[instruction->opcode]);
 	if (instruction->operand1.type != OPERAND_TYPE_NONE) {
-		print_operand(&instruction->operand1, instruction_text, instruction_text_size);
+		print_operand(&instruction->operand1, instruction_text, instruction_text_size, closure);
 		if (instruction->operand2.type != OPERAND_TYPE_NONE) {
 			strncat(instruction_text, ", ", instruction_text_size);
-			print_operand(&instruction->operand2, instruction_text, instruction_text_size);
+			print_operand(&instruction->operand2, instruction_text, instruction_text_size, closure);
 		}
 	}
 	return true;
 }
 
-bool generate_assembly(asm_node_t * instructions, int out_fd) {
+bool generate_assembly(asm_node_t * instructions, int out_fd, closure_t * closure) {
 	/* TODO: write to file, nigga */
 	char * current_instruction_text = malloc(sizeof(*current_instruction_text) * 256);
 	asm_node_t * current_instruction = instructions;
@@ -448,7 +452,8 @@ bool generate_assembly(asm_node_t * instructions, int out_fd) {
 		if(!generate_assembly_instruction(
 			current_instruction,
 			current_instruction_text,
-			sizeof(*current_instruction_text) * 256
+			sizeof(*current_instruction_text) * 256,
+			closure
 		)) {
 			return false;
 		}
@@ -463,7 +468,9 @@ bool gen_asm_x86(code_file_t * code_file, int out_fd)
 {
 	closure_t file_closure = {
 		.instructions = NULL,
-		.variables = NULL
+		.variables = NULL,
+		.label_count = 1,
+		.closure_name = "global_closure"
 	};
 	code_block_t * code_block = code_file->first_block;
 	while (code_block != NULL)
@@ -473,5 +480,5 @@ bool gen_asm_x86(code_file_t * code_file, int out_fd)
 		}
 		code_block = NULL; // TODO add the other blocks
 	}
-	return generate_assembly(file_closure.instructions, out_fd);
+	return generate_assembly(file_closure.instructions, out_fd, &file_closure);
 }

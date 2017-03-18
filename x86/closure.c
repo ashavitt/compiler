@@ -62,3 +62,18 @@ void add_instruction_to_closure(asm_node_t * node, closure_t * closure) {
         current_instruction->next = node;
     }
 }
+
+void add_label_to_node(
+	asm_node_t * node,
+	closure_t * closure)
+{
+	if (NULL == node)
+	{
+		return;
+	}
+	if (0 == node->label_index)
+	{
+		node->label_index = closure->label_count;
+		closure->label_count = closure->label_count + 1;
+	}
+}

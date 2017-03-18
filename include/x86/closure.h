@@ -65,6 +65,8 @@ typedef struct variable_s {
 typedef struct {
     asm_node_t * instructions;
     variable_t * variables;
+    unsigned long label_count;
+    char * closure_name;
 } closure_t;
 
 /* yes we use intel syntax */
@@ -75,6 +77,7 @@ struct asm_node
 	operand_e operand1;
     /* src */
 	operand_e operand2;
+	unsigned long label_index;
 	struct asm_node * next;
 };
 
@@ -98,6 +101,11 @@ variable_t * lookup_expression_result(
 variable_t * get_variable(
     closure_t * closure,
     char * identifier
+);
+
+void add_label_to_node(
+	asm_node_t * node,
+	closure_t * closure
 );
 
 #endif
