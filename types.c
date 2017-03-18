@@ -81,7 +81,7 @@ static unsigned long calculate_size(type_space_t *type_space, declaration_type_t
         case DECLARATION_TYPE_BASE_STRUCT:
             return calculate_struct_size(type_space, type);
         case DECLARATION_TYPE_BASE_ENUM:
-            return 4; /* int size :) */
+            return lookup_type(type_space, get_primitive_string(DECLARATION_TYPE_BASE_TYPE_INT))->size;
         case DECLARATION_TYPE_BASE_UNION:
             return align(calculate_union_size(type_space, type));
     }
