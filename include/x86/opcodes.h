@@ -14,7 +14,10 @@ typedef enum opcode
     OPCODE_OR,
     OPCODE_JMP,
     OPCODE_PUSH,
-    OPCODE_POP
+    OPCODE_POP,
+    OPCODE_JZ,
+    OPCODE_JNZ,
+    OPCODE_NOP
 } opcode_e;
 
 typedef enum

@@ -1,5 +1,4 @@
 #include <x86/gen_asm.h>
-#include <x86/closure.h>
 #include <string.h>
 #include <unistd.h>
 #include <stdio.h>
@@ -234,6 +233,76 @@ bool generate_declaration(statement_t * statement, closure_t * closure) {
 	return true;
 }
 
+bool generate_ifelse(statement_ifelse_t * ifelse, closure_t * closure)
+{
+	variable_t * if_expr_variable = NULL;
+	asm_node_t * check_evaluated_expression = NULL;
+	asm_node_t * jmp_over_if = NULL;
+	asm_node_t * jmp_over_else = NULL;
+	asm_node_t * after_if_opcode = NULL;
+	asm_node_t * after_else_opcode = NULL;
+
+	check_evaluated_expression = malloc(sizeof(*check_evaluated_expression));
+	jmp_over_if = malloc(sizeof(*jmp_over_if));
+
+	if (!load_expression_to_register(ifelse->if_expr, closure, REGISTER_EAX))
+	{
+		return false;
+	}
+
+	/* load the evaluated expression and check if its 0 */
+	check_evaluated_expression->opcode = OPCODE_OR;
+	check_evaluated_expression->operand1.type = OPERAND_TYPE_REG;
+	check_evaluated_expression->operand1.reg = REGISTER_EAX;
+	check_evaluated_expression->operand2.type = OPERAND_TYPE_REG;
+	check_evaluated_expression->operand2.reg = REGISTER_EAX;
+	add_instruction_to_closure(check_evaluated_expression, closure);
+
+	jmp_over_if->opcode = OPCODE_JZ;
+	jmp_over_if->operand1.type = OPERAND_TYPE_REFERENCE;
+	jmp_over_if->operand1.ref = NULL; /* this will be set later on */
+	add_instruction_to_closure(jmp_over_if, closure);
+
+	if (!parse_block(ifelse->if_block, closure))
+	{
+		return false;
+	}
+
+	if (NULL == ifelse->else_block)
+	{
+		after_if_opcode = malloc(sizeof(*after_if_opcode));
+		after_if_opcode->opcode = OPCODE_NOP;
+		add_instruction_to_closure(after_if_opcode, closure);
+	}
+	else
+	{
+		/* add a jmp so the else block won't be executed after the if block */
+		jmp_over_else = malloc(sizeof(*jmp_over_else));
+		jmp_over_else->opcode = OPCODE_JMP;
+		jmp_over_else->operand1.type = OPERAND_TYPE_REFERENCE;
+		jmp_over_else->operand1.ref = NULL; /* this will be set later */
+		add_instruction_to_closure(jmp_over_else, closure);
+		
+		/* add the else block */
+		if (!parse_block(ifelse->else_block, closure))
+		{
+			return false;
+		}
+
+		/* set the start of the else block */
+		/* TODO what if the else block is empty but still exists?? */
+		after_if_opcode = jmp_over_else->next;
+
+		after_else_opcode = malloc(sizeof(*after_else_opcode));
+		after_else_opcode->opcode = OPCODE_NOP;
+		add_instruction_to_closure(after_else_opcode, closure);
+		jmp_over_else->operand1.ref = after_else_opcode;
+	}
+	/* This is a little hack, set the jmp destination if the condition is not met */
+	jmp_over_if->operand1.ref = after_if_opcode;
+	return true;
+}
+
 bool parse_block(code_block_t * code_block, closure_t * closure)
 {
 	statement_t * current_statement = code_block->first_line;
@@ -252,7 +321,11 @@ bool parse_block(code_block_t * code_block, closure_t * closure)
 				break;
 
 			case STATEMENT_TYPE_IFELSE:
-				return false; // not supported yet (never)
+				if (!generate_ifelse(&current_statement->ifelse, closure))
+				{
+					return false;
+				}
+				break;
 		}
 		current_statement = current_statement->next;
 	}
@@ -272,7 +345,10 @@ static char * instruction_to_text[] = {
 	"or",
 	"jmp",
 	"push",
-	"pop"
+	"pop",
+	"jz",
+	"jnz",
+	"nop"
 };
 
 static char * register_to_text[] = {
@@ -338,6 +414,8 @@ bool print_operand(operand_e * operand, char * instruction_text, size_t instruct
 		case OPERAND_TYPE_REG:
 			snprintf(operand_text, sizeof(operand_text), "%s", register_to_text[operand->reg]);
 			strncat(instruction_text, operand_text, instruction_text_size);
+			break;
+		case OPERAND_TYPE_REFERENCE:
 			break;
 		default:
 			return false;
