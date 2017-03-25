@@ -240,6 +240,49 @@ cleanup:
     return success;
 }
 
+bool generate_multiplication(statement_expression_t * expression, closure_t * closure) {
+	asm_node_t * mul_asm = NULL;
+	variable_t * result = NULL;
+
+	result = allocate_variable(closure, 4, "", VALUE_TYPE_EXPRESSION_RESULT);
+	if (NULL == result) {
+		return false;
+	}
+
+	if (!generate_expression(expression->exp_op.exp1, closure)) {
+		return false;
+	}
+
+	if (!generate_expression(expression->exp_op.exp2, closure)) {
+		return false;
+	}
+
+	if (!load_expression_to_register(expression->exp_op.exp1, closure, REGISTER_EBX)) {
+		return false;
+	}
+
+	if (!load_expression_to_register(expression->exp_op.exp2, closure, REGISTER_EAX)) {
+		return false;
+	}
+
+	mul_asm =  malloc(sizeof(*mul_asm));
+	if (NULL == mul_asm) {
+		return false;
+	}
+
+	mul_asm->opcode = OPCODE_MUL;
+	mul_asm->operand1.type = OPERAND_TYPE_REG;
+	mul_asm->operand1.reg = REGISTER_EBX;
+	mul_asm->operand2.type = OPERAND_TYPE_NONE;
+	add_instruction_to_closure(mul_asm, closure);
+	mul_asm = NULL;
+	if (!store_register_to_variable(result, REGISTER_EAX, closure)) {
+		return false;
+	}
+	result->evaluated_expression = expression;
+	return true;
+}
+
 bool generate_operation(statement_expression_t * expression, closure_t * closure) {
 	switch (expression->exp_op.op) {
 		case OP_ASSIGN:
@@ -254,6 +297,8 @@ bool generate_operation(statement_expression_t * expression, closure_t * closure
 			return generate_arithmetic_operator(expression, closure, OPCODE_SUB);
         case OP_NEG:
             return generate_unary_operator(expression, closure, OPCODE_NEG);
+		case OP_MUL:
+			return generate_multiplication(expression, closure);
         case OP_PLUS:
             /* basically just transfer expression result to the current one */
             if (!generate_expression(expression->exp_op.exp1, closure)) {
