@@ -6,6 +6,22 @@
 
 bool generate_expression(statement_expression_t * expression, closure_t * closure);
 
+bool store_register_to_variable(variable_t * variable, register_e source_register, closure_t * closure) {
+    asm_node_t * node_store = malloc(sizeof(*node_store));
+
+    if (NULL == node_store) {
+        return false;
+    }
+
+    node_store->opcode = OPCODE_MOV;
+    node_store->operand1.type = OPERAND_TYPE_STACK_DWORD;
+    node_store->operand1.stack_offset = variable->position.stack_offset;
+    node_store->operand2.type = OPERAND_TYPE_REG;
+    node_store->operand2.reg = source_register;
+    add_instruction_to_closure(node_store, closure);
+    return true;
+}
+
 bool load_from_stack(variable_t * variable, closure_t * closure, register_e target_register) {
 	asm_node_t * node = NULL;
 
@@ -127,11 +143,9 @@ bool generate_arithmetic_operator(statement_expression_t * expression, closure_t
 	variable_t * result = NULL;
 	expression_op_t * addition = &expression->exp_op;
 	asm_node_t *node_op = NULL;
-	asm_node_t *node_store = NULL;
 
 	node_op =  malloc(sizeof(*node_op));
-	node_store = malloc(sizeof(*node_store));
-	if (NULL == node_op || NULL == node_store) {
+	if (NULL == node_op) {
 		success = false;
 		goto cleanup;
 	}
@@ -166,13 +180,12 @@ bool generate_arithmetic_operator(statement_expression_t * expression, closure_t
 		goto cleanup;
 	}
 
-	node_store->operand1.type = OPERAND_TYPE_STACK_DWORD;
-	node_store->operand1.stack_offset = result->position.stack_offset;
-	node_store->operand2.type = OPERAND_TYPE_REG;
-	node_store->operand2.reg = REGISTER_EAX;
+    if (!store_register_to_variable(result, REGISTER_EAX, closure)) {
+        success = false;
+        goto cleanup;
+    }
 
 	add_instruction_to_closure(node_op, closure);
-	add_instruction_to_closure(node_store, closure);
 	result->evaluated_expression = expression;
 
 	success = true;
@@ -182,13 +195,93 @@ cleanup:
 		if (node_op != NULL) {
 			free(node_op);
 		}
-		if (node_store != NULL) {
-			free(node_store);
-		}
 	}
 	return success;
 }
 
+bool generate_unary_operator(statement_expression_t * expression, closure_t * closure, opcode_e opcode) {
+    bool success = false;
+    asm_node_t * opcode_asm = malloc(sizeof(*opcode_asm));
+
+    if (NULL == opcode_asm) {
+        goto cleanup;
+    }
+
+    if(!generate_expression(expression->exp_op.exp1, closure)) {
+        goto cleanup;
+    }
+
+    if (!load_expression_to_register(expression->exp_op.exp1, closure, REGISTER_EAX))
+    {
+        goto cleanup;
+    }
+
+    /* TODO: fix when there are types */
+    variable_t * result =  allocate_variable(closure, 4, "", VALUE_TYPE_EXPRESSION_RESULT);
+
+    opcode_asm->opcode = opcode;
+    opcode_asm->operand1.type = OPERAND_TYPE_REG;
+    opcode_asm->operand1.reg = REGISTER_EAX;
+    opcode_asm->operand2.type = OPERAND_TYPE_NONE;
+    add_instruction_to_closure(opcode_asm, closure);
+    opcode_asm = NULL;
+
+    if (!store_register_to_variable(result, REGISTER_EAX, closure)) {
+        goto cleanup;
+    }
+
+    result->evaluated_expression = expression;
+    success = true;
+
+cleanup:
+    if (NULL != opcode_asm) {
+        free(opcode_asm);
+    }
+    return success;
+}
+
+bool generate_multiplication(statement_expression_t * expression, closure_t * closure) {
+	asm_node_t * mul_asm = NULL;
+	variable_t * result = NULL;
+
+	result = allocate_variable(closure, 4, "", VALUE_TYPE_EXPRESSION_RESULT);
+	if (NULL == result) {
+		return false;
+	}
+
+	if (!generate_expression(expression->exp_op.exp1, closure)) {
+		return false;
+	}
+
+	if (!generate_expression(expression->exp_op.exp2, closure)) {
+		return false;
+	}
+
+	if (!load_expression_to_register(expression->exp_op.exp1, closure, REGISTER_EBX)) {
+		return false;
+	}
+
+	if (!load_expression_to_register(expression->exp_op.exp2, closure, REGISTER_EAX)) {
+		return false;
+	}
+
+	mul_asm =  malloc(sizeof(*mul_asm));
+	if (NULL == mul_asm) {
+		return false;
+	}
+
+	mul_asm->opcode = OPCODE_MUL;
+	mul_asm->operand1.type = OPERAND_TYPE_REG;
+	mul_asm->operand1.reg = REGISTER_EBX;
+	mul_asm->operand2.type = OPERAND_TYPE_NONE;
+	add_instruction_to_closure(mul_asm, closure);
+	mul_asm = NULL;
+	if (!store_register_to_variable(result, REGISTER_EAX, closure)) {
+		return false;
+	}
+	result->evaluated_expression = expression;
+	return true;
+}
 
 bool generate_operation(statement_expression_t * expression, closure_t * closure) {
 	switch (expression->exp_op.op) {
@@ -202,6 +295,21 @@ bool generate_operation(statement_expression_t * expression, closure_t * closure
 			return generate_arithmetic_operator(expression, closure, OPCODE_OR);
 		case OP_SUB:
 			return generate_arithmetic_operator(expression, closure, OPCODE_SUB);
+        case OP_NEG:
+            return generate_unary_operator(expression, closure, OPCODE_NEG);
+		case OP_MUL:
+			return generate_multiplication(expression, closure);
+        case OP_PLUS:
+            /* basically just transfer expression result to the current one */
+            if (!generate_expression(expression->exp_op.exp1, closure)) {
+                return false;
+            }
+            variable_t * result = lookup_expression_result(expression->exp_op.exp1, closure);
+            if (result == NULL) {
+                return false;
+            }
+            result->evaluated_expression = expression;
+            return true;
 		default:
 			return false;
 	}
@@ -445,7 +553,8 @@ static char * instruction_to_text[] = {
 	"pop",
 	"jz",
 	"jnz",
-	"nop"
+	"nop",
+    "neg"
 };
 
 static char * register_to_text[] = {
