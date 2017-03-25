@@ -9,10 +9,11 @@ typedef struct code_block code_block_t;
 typedef enum statement_type
 {
 	STATEMENT_TYPE_DECLARATION,
-    STATEMENT_TYPE_TYPE_DECLARATION,
+	STATEMENT_TYPE_TYPE_DECLARATION,
 	STATEMENT_TYPE_EXPRESSION,
 	STATEMENT_TYPE_IFELSE,
-	STATEMENT_TYPE_LOOP
+	STATEMENT_TYPE_LOOP,
+	STATEMENT_TYPE_BREAK
 } statement_type_e;
 
 typedef struct statement
@@ -44,6 +45,7 @@ statement_t * create_statement_declaration(statement_declaration_t * decl);
 statement_t * create_statement_ifelse(statement_ifelse_t * ifelse);
 statement_t * create_statement_loop(statement_loop_t * loop);
 statement_t * create_statement_type_declaration(statement_type_declaration_t * decl);
+statement_t * create_statement_break();
 void add_statement(code_block_t * file, statement_t * statement);
 void debug_ast(code_file_t * code_file);
 void debug_code_block(code_block_t * code_block, int offset);

@@ -72,7 +72,7 @@ field_t * declaration_struct_field_list;
 %start file
 %token TOK_CHAR TOK_INT TOK_LONG TOK_STRUCT
 %token TOK_SIGNED TOK_UNSIGNED TOK_CONST TOK_VOLATILE TOK_REGISTER
-%token TOK_IF TOK_ELSE TOK_FOR TOK_WHILE
+%token TOK_IF TOK_ELSE TOK_FOR TOK_WHILE TOK_BREAK
 %token TOK_EQUAL TOK_OP_OR TOK_OP_AND
 %token TOK_SHIFT_LEFT TOK_SHIFT_RIGHT
 %token <long_value> TOK_NUMBER
@@ -125,10 +125,11 @@ lines : statement { code_block_t * code_block = malloc(sizeof(code_block_t));
       ;
 
 statement : expr ';' { $$ = create_statement_expression($1); }
-      | type_declaration ';' { $$ = create_statement_type_declaration($1); }
+	  | type_declaration ';' { $$ = create_statement_type_declaration($1); }
 	  | declaration ';' { $$ = create_statement_declaration($1); }
 	  | ifelse { $$ = create_statement_ifelse($1); }
 	  | loop { $$ = create_statement_loop($1); }
+	  | TOK_BREAK { $$ = create_statment_break(); }
 	  ;
 
 ifelse : TOK_IF '(' expr ')' block TOK_ELSE block { $$ = create_ifelse_statement($3, $5, $7); }
