@@ -17,7 +17,8 @@ typedef enum opcode
     OPCODE_POP,
     OPCODE_JZ,
     OPCODE_JNZ,
-    OPCODE_NOP
+    OPCODE_NOP,
+	OPCODE_NEG
 } opcode_e;
 
 typedef enum
