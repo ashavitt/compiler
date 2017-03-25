@@ -129,7 +129,7 @@ statement : expr ';' { $$ = create_statement_expression($1); }
 	  | declaration ';' { $$ = create_statement_declaration($1); }
 	  | ifelse { $$ = create_statement_ifelse($1); }
 	  | loop { $$ = create_statement_loop($1); }
-	  | TOK_BREAK { $$ = create_statment_break(); }
+	  | TOK_BREAK { $$ = create_statement_break(); }
 	  ;
 
 ifelse : TOK_IF '(' expr ')' block TOK_ELSE block { $$ = create_ifelse_statement($3, $5, $7); }
