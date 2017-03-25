@@ -77,3 +77,18 @@ void add_label_to_node(
 		closure->label_count = closure->label_count + 1;
 	}
 }
+
+closure_t * enter_new_closure(
+	closure_t * old_closure,
+	char * closure_name)
+{
+	closure_t * new_closure = malloc(sizeof(*new_closure));
+
+	new_closure->parent = old_closure;
+	new_closure->instructions = NULL;
+	new_closure->variables = NULL;
+	new_closure->label_count = 1;
+	new_closure->closure_name = closure_name;
+
+	return new_closure;
+}

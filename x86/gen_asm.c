@@ -682,6 +682,7 @@ bool generate_assembly(asm_node_t * instructions, int out_fd, closure_t * closur
 bool gen_asm_x86(code_file_t * code_file, int out_fd)
 {
 	closure_t file_closure = {
+		.parent = NULL,
 		.instructions = NULL,
 		.variables = NULL,
 		.label_count = 1,
