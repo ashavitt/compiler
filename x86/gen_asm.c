@@ -299,7 +299,6 @@ bool generate_declaration(statement_t * statement, closure_t * closure) {
 
 bool generate_ifelse(statement_ifelse_t * ifelse, closure_t * closure)
 {
-	variable_t * if_expr_variable = NULL;
 	asm_node_t * check_evaluated_expression = NULL;
 	asm_node_t * jmp_over_if = NULL;
 	asm_node_t * jmp_over_else = NULL;
@@ -309,9 +308,9 @@ bool generate_ifelse(statement_ifelse_t * ifelse, closure_t * closure)
 	check_evaluated_expression = malloc(sizeof(*check_evaluated_expression));
 	jmp_over_if = malloc(sizeof(*jmp_over_if));
 
-    if(!generate_expression(ifelse->if_expr, closure)) {
-        return false;
-    }
+	if(!generate_expression(ifelse->if_expr, closure)) {
+		return false;
+	}
 
 	if (!load_expression_to_register(ifelse->if_expr, closure, REGISTER_EAX))
 	{
@@ -373,6 +372,91 @@ bool generate_ifelse(statement_ifelse_t * ifelse, closure_t * closure)
 	return true;
 }
 
+bool generate_loop(statement_loop_t * loop, closure_t * closure)
+{
+	asm_node_t * check_evaluated_expression = NULL;
+	asm_node_t * jmp_over_loop = NULL;
+	asm_node_t * after_init = NULL;
+	asm_node_t * jmp_to_start = NULL;
+	asm_node_t * end_of_loop = NULL;
+
+	/* first the initialization of the loop */
+	if (loop->init_expression != NULL)
+	{
+		if(!generate_expression(loop->init_expression, closure))
+		{
+			return false;
+		}
+	}
+
+	after_init = malloc(sizeof(*after_init));
+	after_init->opcode = OPCODE_NOP;
+	add_instruction_to_closure(after_init, closure);
+
+	/* the loop condition */
+	if (loop->condition_expression != NULL)
+	{
+		if (!generate_expression(loop->condition_expression, closure))
+		{
+			return false;
+		}
+		if (!load_expression_to_register(loop->condition_expression, closure, REGISTER_EAX))
+		{
+			return false;
+		}
+
+		check_evaluated_expression = malloc(sizeof(*check_evaluated_expression));
+		jmp_over_loop = malloc(sizeof(*jmp_over_loop));
+
+		/* load the evaluated expression and check if its 0 */
+		check_evaluated_expression->opcode = OPCODE_OR;
+		check_evaluated_expression->operand1.type = OPERAND_TYPE_REG;
+		check_evaluated_expression->operand1.reg = REGISTER_EAX;
+		check_evaluated_expression->operand2.type = OPERAND_TYPE_REG;
+		check_evaluated_expression->operand2.reg = REGISTER_EAX;
+		add_instruction_to_closure(check_evaluated_expression, closure);
+
+		jmp_over_loop->opcode = OPCODE_JZ;
+		jmp_over_loop->operand1.type = OPERAND_TYPE_REFERENCE;
+		jmp_over_loop->operand1.ref = NULL; /* this will be set later on */
+		add_instruction_to_closure(jmp_over_loop, closure);
+	}
+	
+	/* the body of the loop */
+	if (!parse_block(loop->loop_body, closure))
+	{
+		return false;
+	}
+
+	/* loop stepping expression */
+	if (loop->iteration_expression != NULL)
+	{
+		if (!generate_expression(loop->iteration_expression, closure))
+		{
+			return false;
+		}
+	}
+
+	jmp_to_start = malloc(sizeof(*jmp_to_start));
+	jmp_to_start->opcode = OPCODE_JMP;
+	jmp_to_start->operand1.type = OPERAND_TYPE_REFERENCE;
+	jmp_to_start->operand1.ref = after_init;
+	add_label_to_node(after_init, closure);
+	add_instruction_to_closure(jmp_to_start, closure);
+
+	end_of_loop = malloc(sizeof(*end_of_loop));
+	end_of_loop->opcode = OPCODE_NOP;
+	add_instruction_to_closure(end_of_loop, closure);
+
+	if (loop->condition_expression != NULL)
+	{
+		jmp_over_loop->operand1.ref = end_of_loop;
+		add_label_to_node(end_of_loop, closure);
+	}
+
+	return true;
+}
+
 bool parse_block(code_block_t * code_block, closure_t * closure)
 {
 	statement_t * current_statement = code_block->first_line;
@@ -392,6 +476,12 @@ bool parse_block(code_block_t * code_block, closure_t * closure)
 
 			case STATEMENT_TYPE_IFELSE:
 				if (!generate_ifelse(&current_statement->ifelse, closure))
+				{
+					return false;
+				}
+				break;
+			case STATEMENT_TYPE_LOOP:
+				if (!generate_loop(&current_statement->loop, closure))
 				{
 					return false;
 				}
