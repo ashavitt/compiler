@@ -115,4 +115,8 @@ closure_t * enter_new_closure(
 	char * closure_name
 );
 
+closure_t * exit_closure(
+	closure_t * old_closure
+);
+
 #endif
