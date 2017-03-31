@@ -424,11 +424,15 @@ bool generate_loop(statement_loop_t * loop, closure_t * closure)
 	asm_node_t * after_init = NULL;
 	asm_node_t * jmp_to_start = NULL;
 	asm_node_t * end_of_loop = NULL;
+	closure_t * loop_closure = NULL;
+
+	/* enter the loop's closure */
+	loop_closure = enter_new_closure(closure, "loop (FIXME: name)");
 
 	/* first the initialization of the loop */
 	if (loop->init_expression != NULL)
 	{
-		if(!generate_expression(loop->init_expression, closure))
+		if(!generate_expression(loop->init_expression, loop_closure))
 		{
 			return false;
 		}
@@ -436,16 +440,16 @@ bool generate_loop(statement_loop_t * loop, closure_t * closure)
 
 	after_init = malloc(sizeof(*after_init));
 	after_init->opcode = OPCODE_NOP;
-	add_instruction_to_closure(after_init, closure);
+	add_instruction_to_closure(after_init, loop_closure);
 
 	/* the loop condition */
 	if (loop->condition_expression != NULL)
 	{
-		if (!generate_expression(loop->condition_expression, closure))
+		if (!generate_expression(loop->condition_expression, loop_closure))
 		{
 			return false;
 		}
-		if (!load_expression_to_register(loop->condition_expression, closure, REGISTER_EAX))
+		if (!load_expression_to_register(loop->condition_expression, loop_closure, REGISTER_EAX))
 		{
 			return false;
 		}
@@ -459,16 +463,16 @@ bool generate_loop(statement_loop_t * loop, closure_t * closure)
 		check_evaluated_expression->operand1.reg = REGISTER_EAX;
 		check_evaluated_expression->operand2.type = OPERAND_TYPE_REG;
 		check_evaluated_expression->operand2.reg = REGISTER_EAX;
-		add_instruction_to_closure(check_evaluated_expression, closure);
+		add_instruction_to_closure(check_evaluated_expression, loop_closure);
 
 		jmp_over_loop->opcode = OPCODE_JZ;
 		jmp_over_loop->operand1.type = OPERAND_TYPE_REFERENCE;
 		jmp_over_loop->operand1.ref = NULL; /* this will be set later on */
-		add_instruction_to_closure(jmp_over_loop, closure);
+		add_instruction_to_closure(jmp_over_loop, loop_closure);
 	}
 	
 	/* the body of the loop */
-	if (!parse_block(loop->loop_body, closure))
+	if (!parse_block(loop->loop_body, loop_closure))
 	{
 		return false;
 	}
@@ -476,7 +480,7 @@ bool generate_loop(statement_loop_t * loop, closure_t * closure)
 	/* loop stepping expression */
 	if (loop->iteration_expression != NULL)
 	{
-		if (!generate_expression(loop->iteration_expression, closure))
+		if (!generate_expression(loop->iteration_expression, loop_closure))
 		{
 			return false;
 		}
@@ -486,17 +490,17 @@ bool generate_loop(statement_loop_t * loop, closure_t * closure)
 	jmp_to_start->opcode = OPCODE_JMP;
 	jmp_to_start->operand1.type = OPERAND_TYPE_REFERENCE;
 	jmp_to_start->operand1.ref = after_init;
-	add_label_to_node(after_init, closure);
-	add_instruction_to_closure(jmp_to_start, closure);
+	add_label_to_node(after_init, loop_closure);
+	add_instruction_to_closure(jmp_to_start, loop_closure);
 
 	end_of_loop = malloc(sizeof(*end_of_loop));
 	end_of_loop->opcode = OPCODE_NOP;
-	add_instruction_to_closure(end_of_loop, closure);
+	add_instruction_to_closure(end_of_loop, loop_closure);
 
 	if (loop->condition_expression != NULL)
 	{
 		jmp_over_loop->operand1.ref = end_of_loop;
-		add_label_to_node(end_of_loop, closure);
+		add_label_to_node(end_of_loop, loop_closure);
 	}
 
 	return true;

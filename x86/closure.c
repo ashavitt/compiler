@@ -115,8 +115,14 @@ closure_t * enter_new_closure(
 	char * closure_name)
 {
 	closure_t * new_closure = malloc(sizeof(*new_closure));
+	closure_t * last_closure = old_closure;
 
-	old_closure->next_closure = new_closure;
+	/* seek the last closure in the closures list */
+	while (NULL != last_closure->next_closure)
+	{
+		last_closure = last_closure->next_closure;
+	}
+	last_closure->next_closure = new_closure;
 	new_closure->parent = old_closure;
 	new_closure->instructions = NULL;
 	new_closure->variables = NULL;
