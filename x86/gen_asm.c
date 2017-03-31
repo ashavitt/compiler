@@ -427,7 +427,7 @@ bool generate_loop(statement_loop_t * loop, closure_t * closure)
 	closure_t * loop_closure = NULL;
 
 	/* enter the loop's closure */
-	loop_closure = enter_new_closure(closure, "loop (FIXME: name)");
+	loop_closure = enter_new_closure(closure);
 
 	/* first the initialization of the loop */
 	if (loop->init_expression != NULL)
@@ -502,6 +502,8 @@ bool generate_loop(statement_loop_t * loop, closure_t * closure)
 		jmp_over_loop->operand1.ref = end_of_loop;
 		add_label_to_node(end_of_loop, loop_closure);
 	}
+
+	exit_closure(loop_closure);
 
 	return true;
 }

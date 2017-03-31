@@ -111,23 +111,16 @@ void add_label_to_node(
 }
 
 closure_t * enter_new_closure(
-	closure_t * old_closure,
-	char * closure_name)
+	closure_t * old_closure
+	)
 {
 	closure_t * new_closure = malloc(sizeof(*new_closure));
-	closure_t * last_closure = old_closure;
 
-	/* seek the last closure in the closures list */
-	while (NULL != last_closure->next_closure)
-	{
-		last_closure = last_closure->next_closure;
-	}
-	last_closure->next_closure = new_closure;
 	new_closure->parent = old_closure;
 	new_closure->instructions = NULL;
 	new_closure->variables = NULL;
-	new_closure->label_count = 1;
-	new_closure->closure_name = closure_name;
+	new_closure->label_count = old_closure->label_count;
+	new_closure->closure_name = old_closure->closure_name;
 
 	return new_closure;
 }
@@ -135,15 +128,13 @@ closure_t * enter_new_closure(
 closure_t * exit_closure(
 	closure_t * old_closure)
 {
-	closure_t * new_closure = malloc(sizeof(*new_closure));
+	closure_t * new_closure = old_closure->parent;
+	asm_node_t * last_instruction = NULL;
 
-	old_closure->next_closure = new_closure;
-	/* TODO - check NULL deref */
-	new_closure->parent = old_closure->parent->parent;
-	new_closure->instructions = NULL;
-	new_closure->variables = old_closure->parent->variables;
-	new_closure->label_count = old_closure->parent->label_count;
-	new_closure->closure_name = old_closure->parent->closure_name;
+	/* concatenate instructions */
+	add_instruction_to_closure(old_closure->instructions, new_closure);
+	/* increase the label count */
+	new_closure->label_count = old_closure->label_count;
 
 	return new_closure;
 }

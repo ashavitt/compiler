@@ -111,8 +111,7 @@ void add_label_to_node(
 );
 
 closure_t * enter_new_closure(
-	closure_t * old_closure,
-	char * closure_name
+	closure_t * old_closure
 );
 
 closure_t * exit_closure(
