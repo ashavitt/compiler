@@ -653,28 +653,36 @@ bool generate_assembly_instruction(asm_node_t * instruction, char * instruction_
 	return true;
 }
 
-bool generate_assembly(asm_node_t * instructions, int out_fd, closure_t * closure) {
+bool generate_assembly(closure_t * closure, int out_fd) {
 	/* TODO: write to file, nigga */
 	char * current_instruction_text = malloc(sizeof(*current_instruction_text) * 256);
-	asm_node_t * current_instruction = instructions;
-
+	asm_node_t * current_instruction = NULL;
+	
 	if (NULL == current_instruction_text) {
 		return false;
 	}
 
-	while (current_instruction != NULL) {
-		memset(current_instruction_text, 0, sizeof(*current_instruction_text) * 256);
-		if(!generate_assembly_instruction(
-			current_instruction,
-			current_instruction_text,
-			sizeof(*current_instruction_text) * 256,
-			closure
-		)) {
-			return false;
+	while (closure != NULL)
+	{
+		current_instruction = closure->instructions;
+
+
+		while (current_instruction != NULL) {
+			memset(current_instruction_text, 0, sizeof(*current_instruction_text) * 256);
+			if(!generate_assembly_instruction(
+				current_instruction,
+				current_instruction_text,
+				sizeof(*current_instruction_text) * 256,
+				closure
+			))
+			{
+				return false;
+			}
+			write(out_fd, current_instruction_text, strlen(current_instruction_text));
+			write(out_fd, "\n", 1);
+			current_instruction = current_instruction->next;
 		}
-		write(out_fd, current_instruction_text, strlen(current_instruction_text));
-		write(out_fd, "\n", 1);
-		current_instruction = current_instruction->next;
+		closure = closure->next_closure;
 	}
 	return true;
 }
@@ -682,6 +690,7 @@ bool generate_assembly(asm_node_t * instructions, int out_fd, closure_t * closur
 bool gen_asm_x86(code_file_t * code_file, int out_fd)
 {
 	closure_t file_closure = {
+		.next_closure = NULL,
 		.parent = NULL,
 		.instructions = NULL,
 		.variables = NULL,
@@ -696,5 +705,5 @@ bool gen_asm_x86(code_file_t * code_file, int out_fd)
 		}
 		code_block = NULL; // TODO add the other blocks
 	}
-	return generate_assembly(file_closure.instructions, out_fd, &file_closure);
+	return generate_assembly(&file_closure, out_fd);
 }

@@ -63,6 +63,7 @@ typedef struct variable_s {
 
 
 typedef struct closure {
+    struct closure * next_closure;
     struct closure * parent;
     asm_node_t * instructions;
     variable_t * variables;
