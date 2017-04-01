@@ -71,6 +71,7 @@ typedef struct closure {
     variable_t * variables;
     unsigned long label_count;
     char * closure_name;
+    asm_node_t * break_to_instruction;
 } closure_t;
 
 /* yes we use intel syntax */

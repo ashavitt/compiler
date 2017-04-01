@@ -121,6 +121,7 @@ closure_t * enter_new_closure(
 	new_closure->variables = NULL;
 	new_closure->label_count = old_closure->label_count;
 	new_closure->closure_name = old_closure->closure_name;
+	new_closure->break_to_instruction = old_closure->break_to_instruction;
 
 	return new_closure;
 }

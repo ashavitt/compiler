@@ -426,8 +426,13 @@ bool generate_loop(statement_loop_t * loop, closure_t * closure)
 	asm_node_t * end_of_loop = NULL;
 	closure_t * loop_closure = NULL;
 
+	end_of_loop = malloc(sizeof(*end_of_loop));
+	end_of_loop->opcode = OPCODE_NOP;
+
 	/* enter the loop's closure */
 	loop_closure = enter_new_closure(closure);
+	/* set the end of the loop for breaks */
+	loop_closure->break_to_instruction = end_of_loop;
 
 	/* first the initialization of the loop */
 	if (loop->init_expression != NULL)
@@ -493,8 +498,6 @@ bool generate_loop(statement_loop_t * loop, closure_t * closure)
 	add_label_to_node(after_init, loop_closure);
 	add_instruction_to_closure(jmp_to_start, loop_closure);
 
-	end_of_loop = malloc(sizeof(*end_of_loop));
-	end_of_loop->opcode = OPCODE_NOP;
 	add_instruction_to_closure(end_of_loop, loop_closure);
 
 	if (loop->condition_expression != NULL)
@@ -505,6 +508,28 @@ bool generate_loop(statement_loop_t * loop, closure_t * closure)
 
 	exit_closure(loop_closure);
 
+	return true;
+}
+
+bool generate_break(closure_t * closure)
+{
+	asm_node_t * break_jmp = NULL;
+	if (NULL == closure->break_to_instruction)
+	{
+		/* nothing to break from */
+		return false;
+	}
+
+	break_jmp = malloc(sizeof(*break_jmp));
+	if (NULL == break_jmp)
+	{
+		return false;
+	}
+
+	break_jmp->opcode = OPCODE_JMP;
+	break_jmp->operand1.type = OPERAND_TYPE_REFERENCE;
+	break_jmp->operand1.ref = closure->break_to_instruction;
+	add_instruction_to_closure(break_jmp, closure);
 	return true;
 }
 
@@ -537,6 +562,12 @@ bool parse_block(code_block_t * code_block, closure_t * closure)
 					return false;
 				}
 				break;
+			case STATEMENT_TYPE_BREAK:
+				if (!generate_break(closure))
+				{
+					return false;
+				}
+				break;
 		}
 		current_statement = current_statement->next;
 	}
@@ -560,7 +591,7 @@ static char * instruction_to_text[] = {
 	"jz",
 	"jnz",
 	"nop",
-    "neg"
+	"neg"
 };
 
 static char * register_to_text[] = {
@@ -701,7 +732,8 @@ bool gen_asm_x86(code_file_t * code_file, int out_fd)
 		.instructions = NULL,
 		.variables = NULL,
 		.label_count = 1,
-		.closure_name = "global_closure"
+		.closure_name = "global_closure",
+		.break_to_instruction = NULL
 	};
 	code_block_t * code_block = code_file->first_block;
 	while (code_block != NULL)
