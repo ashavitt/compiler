@@ -35,7 +35,11 @@ typedef enum operator_type
 	OP_EQUAL,
 	OP_NEQUAL,
 	OP_BSHIFT_RIGHT,
-	OP_BSHIFT_LEFT
+	OP_BSHIFT_LEFT,
+	OP_LESS,
+	OP_GREATER,
+	OP_LESS_EQUAL,
+	OP_GREATER_EQUAL
 } operator_type_e;
 
 struct expression_op

@@ -9,7 +9,8 @@ const char * operator_type_str[] = {
 	"addition", "substitution", "multiplication", "division", "modulu",
 	"bitwise xor", "bitwise and", "bitwise or", "logical and", "logical or",
 	"assignment", "unary plus", "unary minus", "equal", "not equal",
-	"bitwise shift right", "bitwise shift left"
+	"bitwise shift right", "bitwise shift left", "less", "greater",
+	"less equal", "greater equal"
 };
 
 statement_t * create_statement(statement_type_e type)

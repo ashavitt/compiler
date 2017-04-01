@@ -36,6 +36,8 @@ break			{return TOK_BREAK;}
 &&			{ return TOK_OP_AND; }
 \>\>			{ return TOK_SHIFT_RIGHT; }
 \<\<			{ return TOK_SHIFT_LEFT; }
+\<=			{ return TOK_LESS_EQUAL; }
+\>=			{ return TOK_GREATER_EQUAL; }
 
 .			{return yytext[0];}
 %%

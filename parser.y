@@ -75,6 +75,7 @@ field_t * declaration_struct_field_list;
 %token TOK_IF TOK_ELSE TOK_FOR TOK_WHILE TOK_BREAK
 %token TOK_EQUAL TOK_OP_OR TOK_OP_AND
 %token TOK_SHIFT_LEFT TOK_SHIFT_RIGHT
+%token TOK_LESS_EQUAL TOK_GREATER_EQUAL
 %token <long_value> TOK_NUMBER
 %token <identifier_name> TOK_IDENTIFIER
 
@@ -104,6 +105,8 @@ field_t * declaration_struct_field_list;
 %left '&'
 %left TOK_EQUAL
 %left TOK_NEQUAL
+%left '<' '>'
+%left TOK_GREATER_EQUAL TOK_LESS_EQUAL
 %left TOK_SHIFT_RIGHT TOK_SHIFT_LEFT
 %left '+' '-'
 %left '*' '/'
@@ -160,6 +163,10 @@ expr : TOK_NUMBER { $$ = create_const_expression($1); }
      | expr '&' expr { $$ = create_op_expression(OP_BAND, $1, $3, NULL); }
      | expr TOK_EQUAL expr { $$ = create_op_expression(OP_EQUAL, $1, $3, NULL); }
      | expr TOK_NEQUAL expr { $$ = create_op_expression(OP_NEQUAL, $1, $3, NULL); }
+     | expr '<' expr { $$ = create_op_expression(OP_LESS, $1, $3, NULL); }
+     | expr '>' expr { $$ = create_op_expression(OP_GREATER, $1, $3, NULL); }
+     | expr TOK_LESS_EQUAL expr { $$ = create_op_expression(OP_LESS_EQUAL, $1, $3, NULL); }
+     | expr TOK_GREATER_EQUAL expr { $$ = create_op_expression(OP_GREATER_EQUAL, $1, $3, NULL); }
      | expr TOK_SHIFT_RIGHT expr { $$ = create_op_expression(OP_BSHIFT_RIGHT, $1, $3, NULL); }
      | expr TOK_SHIFT_LEFT expr { $$ = create_op_expression(OP_BSHIFT_LEFT, $1, $3, NULL); }
      | expr '+' expr { $$ = create_op_expression(OP_ADD, $1, $3, NULL); }
