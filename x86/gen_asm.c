@@ -424,11 +424,15 @@ bool generate_loop(statement_loop_t * loop, closure_t * closure)
 	asm_node_t * after_init = NULL;
 	asm_node_t * jmp_to_start = NULL;
 	asm_node_t * end_of_loop = NULL;
+	closure_t * loop_closure = NULL;
+
+	/* enter the loop's closure */
+	loop_closure = enter_new_closure(closure);
 
 	/* first the initialization of the loop */
 	if (loop->init_expression != NULL)
 	{
-		if(!generate_expression(loop->init_expression, closure))
+		if(!generate_expression(loop->init_expression, loop_closure))
 		{
 			return false;
 		}
@@ -436,16 +440,16 @@ bool generate_loop(statement_loop_t * loop, closure_t * closure)
 
 	after_init = malloc(sizeof(*after_init));
 	after_init->opcode = OPCODE_NOP;
-	add_instruction_to_closure(after_init, closure);
+	add_instruction_to_closure(after_init, loop_closure);
 
 	/* the loop condition */
 	if (loop->condition_expression != NULL)
 	{
-		if (!generate_expression(loop->condition_expression, closure))
+		if (!generate_expression(loop->condition_expression, loop_closure))
 		{
 			return false;
 		}
-		if (!load_expression_to_register(loop->condition_expression, closure, REGISTER_EAX))
+		if (!load_expression_to_register(loop->condition_expression, loop_closure, REGISTER_EAX))
 		{
 			return false;
 		}
@@ -459,16 +463,16 @@ bool generate_loop(statement_loop_t * loop, closure_t * closure)
 		check_evaluated_expression->operand1.reg = REGISTER_EAX;
 		check_evaluated_expression->operand2.type = OPERAND_TYPE_REG;
 		check_evaluated_expression->operand2.reg = REGISTER_EAX;
-		add_instruction_to_closure(check_evaluated_expression, closure);
+		add_instruction_to_closure(check_evaluated_expression, loop_closure);
 
 		jmp_over_loop->opcode = OPCODE_JZ;
 		jmp_over_loop->operand1.type = OPERAND_TYPE_REFERENCE;
 		jmp_over_loop->operand1.ref = NULL; /* this will be set later on */
-		add_instruction_to_closure(jmp_over_loop, closure);
+		add_instruction_to_closure(jmp_over_loop, loop_closure);
 	}
 	
 	/* the body of the loop */
-	if (!parse_block(loop->loop_body, closure))
+	if (!parse_block(loop->loop_body, loop_closure))
 	{
 		return false;
 	}
@@ -476,7 +480,7 @@ bool generate_loop(statement_loop_t * loop, closure_t * closure)
 	/* loop stepping expression */
 	if (loop->iteration_expression != NULL)
 	{
-		if (!generate_expression(loop->iteration_expression, closure))
+		if (!generate_expression(loop->iteration_expression, loop_closure))
 		{
 			return false;
 		}
@@ -486,18 +490,20 @@ bool generate_loop(statement_loop_t * loop, closure_t * closure)
 	jmp_to_start->opcode = OPCODE_JMP;
 	jmp_to_start->operand1.type = OPERAND_TYPE_REFERENCE;
 	jmp_to_start->operand1.ref = after_init;
-	add_label_to_node(after_init, closure);
-	add_instruction_to_closure(jmp_to_start, closure);
+	add_label_to_node(after_init, loop_closure);
+	add_instruction_to_closure(jmp_to_start, loop_closure);
 
 	end_of_loop = malloc(sizeof(*end_of_loop));
 	end_of_loop->opcode = OPCODE_NOP;
-	add_instruction_to_closure(end_of_loop, closure);
+	add_instruction_to_closure(end_of_loop, loop_closure);
 
 	if (loop->condition_expression != NULL)
 	{
 		jmp_over_loop->operand1.ref = end_of_loop;
-		add_label_to_node(end_of_loop, closure);
+		add_label_to_node(end_of_loop, loop_closure);
 	}
+
+	exit_closure(loop_closure);
 
 	return true;
 }
@@ -653,28 +659,36 @@ bool generate_assembly_instruction(asm_node_t * instruction, char * instruction_
 	return true;
 }
 
-bool generate_assembly(asm_node_t * instructions, int out_fd, closure_t * closure) {
+bool generate_assembly(closure_t * closure, int out_fd) {
 	/* TODO: write to file, nigga */
 	char * current_instruction_text = malloc(sizeof(*current_instruction_text) * 256);
-	asm_node_t * current_instruction = instructions;
-
+	asm_node_t * current_instruction = NULL;
+	
 	if (NULL == current_instruction_text) {
 		return false;
 	}
 
-	while (current_instruction != NULL) {
-		memset(current_instruction_text, 0, sizeof(*current_instruction_text) * 256);
-		if(!generate_assembly_instruction(
-			current_instruction,
-			current_instruction_text,
-			sizeof(*current_instruction_text) * 256,
-			closure
-		)) {
-			return false;
+	while (closure != NULL)
+	{
+		current_instruction = closure->instructions;
+
+
+		while (current_instruction != NULL) {
+			memset(current_instruction_text, 0, sizeof(*current_instruction_text) * 256);
+			if(!generate_assembly_instruction(
+				current_instruction,
+				current_instruction_text,
+				sizeof(*current_instruction_text) * 256,
+				closure
+			))
+			{
+				return false;
+			}
+			write(out_fd, current_instruction_text, strlen(current_instruction_text));
+			write(out_fd, "\n", 1);
+			current_instruction = current_instruction->next;
 		}
-		write(out_fd, current_instruction_text, strlen(current_instruction_text));
-		write(out_fd, "\n", 1);
-		current_instruction = current_instruction->next;
+		closure = closure->next_closure;
 	}
 	return true;
 }
@@ -682,6 +696,8 @@ bool generate_assembly(asm_node_t * instructions, int out_fd, closure_t * closur
 bool gen_asm_x86(code_file_t * code_file, int out_fd)
 {
 	closure_t file_closure = {
+		.next_closure = NULL,
+		.parent = NULL,
 		.instructions = NULL,
 		.variables = NULL,
 		.label_count = 1,
@@ -695,5 +711,5 @@ bool gen_asm_x86(code_file_t * code_file, int out_fd)
 		}
 		code_block = NULL; // TODO add the other blocks
 	}
-	return generate_assembly(file_closure.instructions, out_fd, &file_closure);
+	return generate_assembly(&file_closure, out_fd);
 }

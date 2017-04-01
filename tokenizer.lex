@@ -21,6 +21,7 @@ if			{return TOK_IF;}
 else			{return TOK_ELSE;}
 for			{return TOK_FOR;}
 while			{return TOK_WHILE;}
+break			{return TOK_BREAK;}
 {IDENTIFIER}		{
 	yylval.identifier_name = strdup(yytext);
 	return TOK_IDENTIFIER;}

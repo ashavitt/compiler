@@ -64,7 +64,9 @@ typedef struct variable_s {
 } variable_t;
 
 
-typedef struct {
+typedef struct closure {
+    struct closure * next_closure;
+    struct closure * parent;
     asm_node_t * instructions;
     variable_t * variables;
     unsigned long label_count;
@@ -108,6 +110,14 @@ variable_t * get_variable(
 void add_label_to_node(
 	asm_node_t * node,
 	closure_t * closure
+);
+
+closure_t * enter_new_closure(
+	closure_t * old_closure
+);
+
+closure_t * exit_closure(
+	closure_t * old_closure
 );
 
 #endif

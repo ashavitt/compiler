@@ -79,6 +79,16 @@ statement_t * create_statement_loop(statement_loop_t * loop)
 	return stmt;
 }
 
+statement_t * create_statement_break()
+{
+	statement_t * stmt = create_statement(STATEMENT_TYPE_BREAK);
+	if (NULL == stmt)
+	{
+		return NULL;
+	}
+	return stmt;
+}
+
 void add_statement(
 	code_block_t * code_block,
 	statement_t * statement)
@@ -253,10 +263,10 @@ void debug_code_block(
 		printf("%*sStatement type: ", offset * debug_shift_width, "");
 		switch(statement->statement_type)
 		{
-            case STATEMENT_TYPE_TYPE_DECLARATION:
-                printf("type declaration\n");
-                debug_type_declaration(statement, offset+1);
-                break;
+			case STATEMENT_TYPE_TYPE_DECLARATION:
+				printf("type declaration\n");
+				debug_type_declaration(statement, offset+1);
+				break;
 			case STATEMENT_TYPE_DECLARATION:
 				printf("declaration\n");
 				debug_declaration(statement, offset + 1);
@@ -272,6 +282,9 @@ void debug_code_block(
 			case STATEMENT_TYPE_LOOP:
 				printf("loop block\n");
 				debug_loop(&(statement->loop), offset + 1);
+				break;
+			case STATEMENT_TYPE_BREAK:
+				printf("break\n");
 				break;
 		}
 		statement = statement->next;
