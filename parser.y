@@ -126,7 +126,8 @@ lines : statement { code_block_t * code_block = malloc(sizeof(code_block_t));
 
 statement : expr ';' { $$ = create_statement_expression($1); }
 	  | type_declaration ';' { $$ = create_statement_type_declaration($1); }
-	  | declaration ';' { $$ = create_statement_declaration($1); }
+	  | declaration ';' { $$ = create_statement_declaration($1, NULL); }
+	  | declaration '=' expr ';' { $$ = create_statement_declaration($1, $3); }
 	  | ifelse { $$ = create_statement_ifelse($1); }
 	  | loop { $$ = create_statement_loop($1); }
 	  | TOK_BREAK ';' { $$ = create_statement_break(); }

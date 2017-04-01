@@ -41,7 +41,7 @@ typedef struct code_file
 } code_file_t;
 
 statement_t * create_statement_expression(statement_expression_t * expr);
-statement_t * create_statement_declaration(statement_declaration_t * decl);
+statement_t * create_statement_declaration(statement_declaration_t * decl, statement_expression_t * initial_value);
 statement_t * create_statement_ifelse(statement_ifelse_t * ifelse);
 statement_t * create_statement_loop(statement_loop_t * loop);
 statement_t * create_statement_type_declaration(statement_type_declaration_t * decl);

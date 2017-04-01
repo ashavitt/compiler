@@ -35,7 +35,9 @@ statement_t * create_statement_expression(statement_expression_t * expr)
 	return stmt;
 }
 
-statement_t * create_statement_declaration(statement_declaration_t * decl)
+statement_t * create_statement_declaration(
+	statement_declaration_t * decl,
+	statement_expression_t * initial_value)
 {
 	statement_t * stmt = create_statement(STATEMENT_TYPE_DECLARATION);
 	if (NULL == stmt)
@@ -43,6 +45,15 @@ statement_t * create_statement_declaration(statement_declaration_t * decl)
 		return NULL;
 	}
 	stmt->declaration = *decl;
+	
+	/* syntactic sugar, assign a value at declaration */
+	if (initial_value != NULL)
+	{
+		statement_expression_t * declaration_identifier = create_identifier_expression(decl->identifier);
+		statement_expression_t * set_initial_value = create_op_expression(OP_ASSIGN, declaration_identifier, initial_value, NULL);
+		statement_t * value_stmt = create_statement_expression(set_initial_value);
+		stmt->next = value_stmt;
+	}
 	return stmt;
 }
 
