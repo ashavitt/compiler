@@ -156,6 +156,7 @@ expr : TOK_NUMBER { $$ = create_const_expression($1); }
      | TOK_IDENTIFIER { lookup_symbol($1);
 		        $$ = create_identifier_expression($1); }
      | expr '=' expr { $$ = create_op_expression(OP_ASSIGN, $1, $3, NULL); }
+     | expr '?' expr ':' expr { $$ = create_op_expression(OP_TERNARY, $1, $3, $5); }
      | expr TOK_OP_OR expr { $$ = create_op_expression(OP_OR, $1, $3, NULL); }
      | expr TOK_OP_AND expr { $$ = create_op_expression(OP_AND, $1, $3, NULL); }
      | expr '|' expr { $$ = create_op_expression(OP_BOR, $1, $3, NULL); }

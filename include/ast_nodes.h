@@ -39,7 +39,8 @@ typedef enum operator_type
 	OP_LESS,
 	OP_GREATER,
 	OP_LESS_EQUAL,
-	OP_GREATER_EQUAL
+	OP_GREATER_EQUAL,
+	OP_TERNARY
 } operator_type_e;
 
 struct expression_op
