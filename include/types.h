@@ -28,6 +28,7 @@ bool add_type(
 );
 
 bool is_same_type(
+    type_space_t *type_space,
     type_t *first_type,
     type_t *second_type
 );

@@ -87,14 +87,6 @@ typedef struct declaration_type_modifier_s {
     bool is_register;
 } declaration_type_modifier_t;
 
-typedef enum declaration_type_base_type_primitive_e {
-    DECLARATION_TYPE_BASE_TYPE_INT,
-    DECLARATION_TYPE_BASE_TYPE_SHORT,
-    DECLARATION_TYPE_BASE_TYPE_LONG,
-    DECLARATION_TYPE_BASE_TYPE_LONG_LONG,
-    DECLARATION_TYPE_BASE_TYPE_CHAR
-} declaration_type_base_type_primitive_t;
-
 typedef struct declaration_type_s declaration_type_t;
 
 typedef struct field_s {

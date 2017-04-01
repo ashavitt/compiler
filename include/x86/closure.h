@@ -7,6 +7,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <stddef.h>
+#include <types.h>
 
 typedef enum {
     VALUE_TYPE_VARIABLE,
@@ -52,10 +53,11 @@ typedef struct {
 
 typedef struct variable_s {
     struct variable_s * next;
-    value_type_e type;
+    value_type_e variable_type;
     position_t position;
     statement_expression_t * evaluated_expression;
     size_t size;
+	type_t type;
     union {
         char * variable_name;
     };

@@ -47,6 +47,5 @@ statement_t * create_statement_type_declaration(statement_type_declaration_t * d
 void add_statement(code_block_t * file, statement_t * statement);
 void debug_ast(code_file_t * code_file);
 void debug_code_block(code_block_t * code_block, int offset);
-char* get_primitive_string(declaration_type_base_type_primitive_t primitive);
 
 #endif

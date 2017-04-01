@@ -3,10 +3,13 @@
 #include <string.h>
 #include <ast.h>
 
+/* TODO: handle error return codes */
 bool is_same_type(
+    type_space_t *type_space,
     type_t *first_type,
     type_t *second_type
 ) {
+    return false;
     /* first the easy checks, pointers and different sizes */
     if (first_type->size != second_type->size ||
         first_type->declaration_type->deref_count != second_type->declaration_type->deref_count ||
@@ -20,8 +23,19 @@ bool is_same_type(
 
     /* apply typedef aliases before further checks */
     if (first_type->declaration_type->type_base == DECLARATION_TYPE_BASE_CUSTOM_TYPE) {
-        /*first_type = first_type->declaration_type->type_base_type.typedef_type;*/
+        first_type = lookup_type(type_space, first_type->declaration_type->type_base_type.identifier);
+        if (NULL == first_type) {
+            return false;
+        }
     }
+    if (second_type->declaration_type->type_base == DECLARATION_TYPE_BASE_CUSTOM_TYPE) {
+        second_type = lookup_type(type_space, second_type->declaration_type->type_base_type.identifier);
+        if (NULL == second_type) {
+            return false;
+        }
+    }
+
+
 
     return false;
 }
@@ -174,7 +188,6 @@ static bool add_primitive(
 
 type_space_t * create_empty_type_space() {
     type_space_t *empty_space = malloc(sizeof(*empty_space));
-    type_t *current_type = NULL;
     if (NULL == empty_space) {
         return NULL;
     }

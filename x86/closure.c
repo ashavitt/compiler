@@ -33,7 +33,7 @@ variable_t * allocate_variable(closure_t * closure, size_t size, char * identifi
         return NULL;
     }
     new_variable->next = closure->variables;
-    new_variable->type = type;
+    new_variable->variable_type = type;
     if (closure->variables == NULL) {
         new_variable->position = (position_t){
                 .stack_offset = -4
