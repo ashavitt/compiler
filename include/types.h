@@ -20,6 +20,7 @@ typedef struct type_s {
 typedef struct type_field_s {
 	struct type_field_s *next_field;
 	type_t *type;
+	char *field_name;
 } type_field_t;
 
 typedef struct type_space_s {
@@ -53,5 +54,7 @@ bool is_same_type(
 type_space_t * create_empty_type_space();
 
 bool type_check(type_space_t *type_space, code_file_t *code_file);
+
+void debug_types(type_space_t *type_space);
 
 #endif

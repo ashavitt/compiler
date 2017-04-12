@@ -2,6 +2,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ast.h>
+#include <stdio.h>
+
+/* TODO: reconsider ENUM */
 
 /* TODO: handle error return codes */
 bool is_same_type(
@@ -188,6 +191,9 @@ bool add_type(
 			free(new_type);
 			return false;
 		}
+		/* TODO: should we deep-copy? */
+		type_fields->field_name = fields->declaration->identifier;
+		fields = fields->next;
 
 		while (fields != NULL) {
 			type_fields->next_field = malloc(sizeof(*type_fields->next_field));
@@ -198,6 +204,8 @@ bool add_type(
 			}
 			type_fields = type_fields->next_field;
 			type_fields->type = get_declaration_type(type_space, fields->declaration);
+			/* TODO: should we deep-copy? */
+			type_fields->field_name = fields->declaration->identifier;
 			if (NULL == type_fields->type) {
 				/* TODO: recursivly free the allocated list */
 				free(new_type);
@@ -211,6 +219,7 @@ bool add_type(
     if (declaration->type.type_base == DECLARATION_TYPE_BASE_CUSTOM_TYPE) {
         statement_type_declaration_t *current_base_type = declaration;
         do {
+			/* TODO: handle duplicate modifier */
             new_type->modifier.is_volatile &= current_base_type->type.modifier.is_volatile;
             new_type->modifier.is_register &= current_base_type->type.modifier.is_register;
             new_type->modifier.is_const &= current_base_type->type.modifier.is_const;
@@ -241,6 +250,7 @@ type_t * get_declaration_type(
 ) {
 	/* we can just treat declaration as typedef
 	 * TODO: that's really the same, we should incorparate it into our design */
+
 	type_t *new_type = malloc(sizeof(*new_type));
 	if (NULL == new_type) {
 		return NULL;
@@ -263,6 +273,7 @@ type_t * get_declaration_type(
 	};
 	statement_type_declaration_t *current_base_type = &real_declaration_type;
 	do {
+		/* TODO: handle duplicate modifier */
 		new_type->modifier.is_volatile &= current_base_type->type.modifier.is_volatile;
 		new_type->modifier.is_register &= current_base_type->type.modifier.is_register;
 		new_type->modifier.is_const &= current_base_type->type.modifier.is_const;
@@ -279,6 +290,16 @@ type_t * get_declaration_type(
 		/* we are yet to support forward declaration or types that do not exist, FTFY */
 		free(new_type);
 		return false;
+	}
+
+	/* If we have no modifiers, just return the actual type */
+	if (!new_type->modifier.is_volatile &&
+		!new_type->modifier.is_unsigned &&
+		!new_type->modifier.is_const &&
+		!new_type->modifier.is_register &&
+		new_type->deref_count == 0
+	) {
+		return lookup_type(type_space, declaration->type.type_base_type.identifier);
 	}
 
 	return new_type;
@@ -367,4 +388,86 @@ bool type_check(type_space_t *type_space, code_file_t *code_file) {
 	}
 
 	return true;
+}
+
+static void print_type(type_t *type) {
+	printf("Type: [%s]", type->name);
+	printf("\t Type's type: ");
+	switch (type->type) {
+		case DECLARATION_TYPE_BASE_STRUCT:
+			printf("struct\n");
+			break;
+		case DECLARATION_TYPE_BASE_ENUM:
+			printf("enum\n");
+			break;
+		case DECLARATION_TYPE_BASE_UNION:
+			printf("union\n");
+			break;
+		case DECLARATION_TYPE_BASE_PRIMITIVE:
+			printf("primitive\n");
+			break;
+		case DECLARATION_TYPE_BASE_CUSTOM_TYPE:
+			printf("typedef\n");
+			break;
+		default:
+			printf("Unknown type, internal error!\n");
+	}
+
+	if (type->type == DECLARATION_TYPE_BASE_STRUCT ||
+		type->type == DECLARATION_TYPE_BASE_UNION ||
+		type->type == DECLARATION_TYPE_BASE_ENUM
+	) {
+		printf("\tFields start:\n");
+		type_field_t *current_field = type->fields;
+		while (current_field != NULL) {
+			printf("\tField name: %s\t", current_field->field_name);
+			print_type(current_field->type);
+			current_field = current_field->next_field;
+		}
+		printf("\tFields end\n");
+	}
+	else if (type->type == DECLARATION_TYPE_BASE_CUSTOM_TYPE) {
+		printf("\tIndirection/deref count: %lu\n", type->deref_count);
+		printf("\tModifiers: ");
+		if (type->modifier.is_register) {
+			printf("register ");
+		}
+		if (type->modifier.is_const) {
+			printf("const ");
+		}
+		if (type->modifier.is_unsigned) {
+			printf("unsigned ");
+		}
+		if (type->modifier.is_volatile) {
+			printf("volatile ");
+		}
+		printf("\n");
+		printf("\tsize=%lu\n", type->size);
+		printf("\tbase type begin:\n");
+		print_type(type->base_type);
+		printf("\tbase type end\n");
+	}
+}
+
+void debug_types(type_space_t *type_space) {
+	type_t *current_type = NULL;
+	printf("Normal space:\n");
+	for (current_type = type_space->normal_space; current_type != NULL ; current_type = current_type->next) {
+		print_type(current_type);
+	}
+
+	printf("Struct space:\n");
+	for (current_type = type_space->struct_space; current_type != NULL ; current_type = current_type->next) {
+		print_type(current_type);
+	}
+
+	printf("Union space:\n");
+	for (current_type = type_space->union_space; current_type != NULL ; current_type = current_type->next) {
+		print_type(current_type);
+	}
+
+	printf("Enum space:\n");
+	for (current_type = type_space->enum_space; current_type != NULL ; current_type = current_type->next) {
+		print_type(current_type);
+	}
 }
