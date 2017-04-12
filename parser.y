@@ -244,6 +244,7 @@ int main(int argc, char * argv[])
 	if (!type_check(type_space, &code_file)) {
         printf("Type check did not pass!\n");
     }
+    debug_types(type_space);
     /* TODO: pass typespace to generate assembly */
 	printf("ASSEMBLY:\n");
     if(!gen_asm_x86(&code_file, 1)) {
