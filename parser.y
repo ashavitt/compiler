@@ -66,7 +66,7 @@ statement_type_declaration_t * statement_type_declaration;
 char * declaration_type;
 declaration_type_modifier_t declaration_modifier;
 unsigned long declaration_indirections;
-field_t * declaration_struct_field_list;
+field_t * type_declaration_struct_field_list;
 }
 
 %start file
@@ -76,6 +76,7 @@ field_t * declaration_struct_field_list;
 %token TOK_EQUAL TOK_OP_OR TOK_OP_AND
 %token TOK_SHIFT_LEFT TOK_SHIFT_RIGHT
 %token TOK_LESS_EQUAL TOK_GREATER_EQUAL
+%token TOK_TYPEDEF
 %token <long_value> TOK_NUMBER
 %token <identifier_name> TOK_IDENTIFIER
 
@@ -86,7 +87,7 @@ field_t * declaration_struct_field_list;
 %type <statement_expression> optional_expr
 %type <statement_declaration> declaration
 %type <statement_type_declaration> type_declaration
-%type <statement_type_declaration> declaration_struct
+%type <statement_type_declaration> type_declaration_struct
 %type <statement_declaration> declaration_primitive
 %type <statement_ifelse> ifelse
 %type <statement_loop> loop
@@ -95,7 +96,7 @@ field_t * declaration_struct_field_list;
 %type <declaration_type> declaration_type
 %type <declaration_modifier> declaration_modifier
 %type <declaration_indirections> declaration_indirections
-%type <declaration_struct_field_list> declaration_struct_field_list
+%type <type_declaration_struct_field_list> type_declaration_struct_field_list
 
 %right '='
 %left TOK_OP_OR
@@ -184,16 +185,16 @@ declaration : declaration_modifier declaration { $$ = declaration_add_modifier($
 	    | declaration_primitive { $$ = $1; };
 	    ;
 
-type_declaration :  declaration_modifier type_declaration { $$ = type_declaration_add_modifier($2, $1); }
-        | declaration_struct { $$ = $1; };
-        ;
+type_declaration : declaration_modifier type_declaration { $$ = type_declaration_add_modifier($2, $1); }
+		 | type_declaration_struct { $$ = $1; };
+		 ;
 
 declaration_primitive : declaration_type declaration_indirections TOK_IDENTIFIER { install_symbol($3);
 	    				$$ = create_declaration_primitive($1, $2, $3); }
 
-declaration_struct : TOK_STRUCT TOK_IDENTIFIER '{' declaration_struct_field_list '}' { $$ = create_declaration_struct($2, $4); }
+type_declaration_struct : TOK_STRUCT TOK_IDENTIFIER '{' type_declaration_struct_field_list '}' { $$ = create_type_declaration_struct($2, $4); }
 
-declaration_struct_field_list : declaration_struct_field_list declaration ';' { $$ = declaration_create_field($2, $1); }
+type_declaration_struct_field_list : type_declaration_struct_field_list declaration ';' { $$ = declaration_create_field($2, $1); }
 			      | declaration ';' { $$ = declaration_create_field($1, NULL); }
 			      ;
 
