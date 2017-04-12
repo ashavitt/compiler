@@ -412,6 +412,7 @@ static void print_type(type_t *type) {
 		default:
 			printf("Unknown type, internal error!\n");
 	}
+	printf("\tType's size: %lu\n", type->size);
 
 	if (type->type == DECLARATION_TYPE_BASE_STRUCT ||
 		type->type == DECLARATION_TYPE_BASE_UNION ||
@@ -442,7 +443,6 @@ static void print_type(type_t *type) {
 			printf("volatile ");
 		}
 		printf("\n");
-		printf("\tsize=%lu\n", type->size);
 		printf("\tbase type begin:\n");
 		print_type(type->base_type);
 		printf("\tbase type end\n");
