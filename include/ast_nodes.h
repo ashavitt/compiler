@@ -137,7 +137,7 @@ statement_declaration_t * create_declaration_primitive(
 	const char * identifier
 );
 
-statement_type_declaration_t * create_declaration_struct(
+statement_type_declaration_t * create_type_declaration_struct(
 	const char * struct_name,
 	field_t * fields
 );
