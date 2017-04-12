@@ -353,8 +353,8 @@ bool type_check(type_space_t *type_space, code_file_t *code_file) {
 	while (current_statement != NULL) {
 		if (current_statement->statement_type == STATEMENT_TYPE_DECLARATION) {
 			/* TODO: REMOVE THIS SHITTY HACK NIGGA, and redesign this shitty module */
-			type_t * declration_type = get_declaration_type(type_space, &current_statement->declaration);
-			if (NULL == declration_type) {
+			type_t * declaration_type = get_declaration_type(type_space, &current_statement->declaration);
+			if (NULL == declaration_type) {
 				return false;
 			}
 		}

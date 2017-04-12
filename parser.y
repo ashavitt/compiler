@@ -89,6 +89,7 @@ field_t * type_declaration_struct_field_list;
 %type <statement_type_declaration> type_declaration
 %type <statement_type_declaration> type_declaration_struct
 %type <statement_declaration> declaration_primitive
+%type <statement_declaration> declaration_struct
 %type <statement_ifelse> ifelse
 %type <statement_loop> loop
 %type <statement_loop> for_loop
@@ -183,6 +184,7 @@ expr : TOK_NUMBER { $$ = create_const_expression($1); }
 
 declaration : declaration_modifier declaration { $$ = declaration_add_modifier($2, $1); }
 	    | declaration_primitive { $$ = $1; };
+	    | declaration_struct { $$ = $1; };
 	    ;
 
 type_declaration : declaration_modifier type_declaration { $$ = type_declaration_add_modifier($2, $1); }
@@ -191,6 +193,8 @@ type_declaration : declaration_modifier type_declaration { $$ = type_declaration
 
 declaration_primitive : declaration_type declaration_indirections TOK_IDENTIFIER { install_symbol($3);
 	    				$$ = create_declaration_primitive($1, $2, $3); }
+
+declaration_struct : TOK_STRUCT TOK_IDENTIFIER declaration_indirections TOK_IDENTIFIER { $$ = create_declaration_struct($2, $3, $4); }
 
 type_declaration_struct : TOK_STRUCT TOK_IDENTIFIER '{' type_declaration_struct_field_list '}' { $$ = create_type_declaration_struct($2, $4); }
 

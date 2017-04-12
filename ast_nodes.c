@@ -207,6 +207,28 @@ statement_declaration_t * create_declaration_primitive(
 	return new_decl;
 }
 
+statement_declaration_t * create_declaration_struct(
+	char * struct_identifier,
+	unsigned long indirections_count,
+	const char * identifier)
+{
+	statement_declaration_t * new_decl = NULL;
+
+	new_decl = create_declaration(indirections_count, identifier);
+	if (NULL == new_decl)
+	{
+		return NULL;
+	}
+
+	new_decl->type.type_base = DECLARATION_TYPE_BASE_STRUCT;
+	new_decl->type.type_base_type = (declaration_type_base_type_t) {
+		.is_primitive = false,
+		.identifier = struct_identifier
+	};
+	return new_decl;
+}
+
+
 statement_type_declaration_t * create_type_declaration_struct(
     const char * struct_name,
     field_t * fields

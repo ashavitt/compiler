@@ -137,6 +137,12 @@ statement_declaration_t * create_declaration_primitive(
 	const char * identifier
 );
 
+statement_declaration_t * create_declaration_struct(
+	char * struct_identifier,
+	unsigned long indirections_count,
+	const char * identifier
+);
+
 statement_type_declaration_t * create_type_declaration_struct(
 	const char * struct_name,
 	field_t * fields
