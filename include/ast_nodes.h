@@ -104,7 +104,7 @@ typedef struct declaration_type_base_type_s {
     char *identifier;
     union {
         field_t *fields;
-        struct declaration_type_s *typedef_type;
+		statement_type_declaration_t *typedef_type;
     };
 } declaration_type_base_type_t;
 

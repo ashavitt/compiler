@@ -201,7 +201,7 @@ void print_declaration(declaration_type_t * declaration, int offset) {
         printf("%*s};", offset * debug_shift_width, "");
     } else if (declaration->type_base == DECLARATION_TYPE_BASE_CUSTOM_TYPE) {
         printf("(");
-        print_declaration(declaration->type_base_type.typedef_type, offset);
+        print_declaration(&declaration->type_base_type.typedef_type->type, offset);
         printf(")");
     }
     else {

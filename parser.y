@@ -215,21 +215,6 @@ declaration_modifier : TOK_SIGNED { $$ = (declaration_type_modifier_t) {}; }
 
 %%
 
-/* TODO: add type check and include it from another file, we dont write real code here */
-bool type_check(type_space_t *type_space, code_file_t *code_file) {
-    statement_t *current_statement = code_file->first_block->first_line;
-    while (current_statement != NULL) {
-        if (current_statement->statement_type == STATEMENT_TYPE_TYPE_DECLARATION) {
-            if (!add_type(type_space, &current_statement->declaration)) {
-                return false;
-            }
-        }
-        current_statement = current_statement->next;
-    }
-
-    return true;
-}
-
 int main(int argc, char * argv[])
 {
     type_space_t *type_space = create_empty_type_space();
