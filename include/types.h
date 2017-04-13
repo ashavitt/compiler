@@ -55,6 +55,13 @@ bool is_same_type(
     type_t *second_type
 );
 
+bool type_check_expression(
+	type_space_t *type_space,
+	statement_expression_t *expression,
+	closure_t *closure,
+	/* OUT */ type_t ** expression_type
+);
+
 type_space_t * create_empty_type_space(type_space_t *parent);
 
 bool type_check_block(type_space_t *type_space, code_block_t *code_block, closure_t *closure);
