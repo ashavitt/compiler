@@ -25,29 +25,38 @@ variable_t * lookup_expression_result(
 	return NULL;
 }
 
+static variable_t * get_variable_from_closure(closure_t * closure, char * identifier) {
+	variable_t * current_variable = NULL;
+	current_variable = closure->parameters;
+	while (current_variable != NULL) {
+		if (0 == strcmp(current_variable->variable_name, identifier)) {
+			return current_variable;
+		}
+		current_variable = current_variable->next;
+	}
+
+	current_variable = closure->variables;
+	while (current_variable != NULL) {
+		if (0 == strcmp(current_variable->variable_name, identifier)) {
+			return current_variable;
+		}
+		current_variable = current_variable->next;
+	}
+
+	return NULL;
+}
+
 variable_t * get_variable(closure_t * closure, char * identifier)
 {
 	variable_t * current_variable = NULL;
 
 	while (closure != NULL)
 	{
-		current_variable = closure->parameters;
-		while (current_variable != NULL) {
-			if (0 == strcmp(current_variable->variable_name, identifier)) {
-				return current_variable;
-			}
-			current_variable = current_variable->next;
+		current_variable = get_variable_from_closure(closure, identifier);
+		if (NULL != current_variable) {
+			return current_variable;
 		}
-
-		current_variable = closure->variables;
-		while (current_variable != NULL) {
-			if (0 == strcmp(current_variable->variable_name, identifier)) {
-				return current_variable;
-			}
-			current_variable = current_variable->next;
-		}
-
-		/* go up in the closure heirarchy */
+		/* go up in the closure hierarchy */
 		closure = closure->parent;
 	}
 
@@ -68,7 +77,7 @@ static variable_t * allocate_parameter(
 
 	/* named variable, check for name collision first */
 	if ((strcmp(identifier, "") != 0) &&
-		(NULL != get_variable(closure, identifier))
+		(NULL != get_variable_from_closure(closure, identifier))
 	) {
 		free(new_variable);
 		return NULL;
@@ -84,6 +93,7 @@ static variable_t * allocate_parameter(
 		{
 			/* add the variable at the end of the stack */
 			new_variable->position = (position_t){
+				/* TODO: when structures and unions and such are passed, we should pass pointer instead */
 				.stack_offset = current_closure->parameters->position.stack_offset + current_closure->parameters->type->size
 			};
 			break;
@@ -115,6 +125,18 @@ variable_t * allocate_variable(
 	closure_t * current_closure = closure;
 	variable_t * new_variable = NULL;
 
+	/* make sure the collision check is made only on named variable */
+	if (strcmp(identifier, "") != 0) {
+		/* check that we don't allocate variable with the closure's name
+		 * and check for name collision */
+		if (
+			(NULL != get_variable_from_closure(closure, identifier)) ||
+			(0 == strcmp(identifier, closure->closure_name))
+		) {
+			free(new_variable);
+			return NULL;
+		}
+	}
 
 	if (type == VALUE_TYPE_PARAMETER) {
 		return allocate_parameter(closure, identifier, type, variable_type);
@@ -122,14 +144,6 @@ variable_t * allocate_variable(
 
 	new_variable = malloc(sizeof(*new_variable));
 	if (NULL == new_variable) {
-		return NULL;
-	}
-
-	/* named variable, check for name collision first */
-	if ((strcmp(identifier, "") != 0) &&
-		(NULL != get_variable(closure, identifier))
-	) {
-		free(new_variable);
 		return NULL;
 	}
 
