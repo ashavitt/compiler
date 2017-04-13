@@ -38,7 +38,7 @@ bool load_from_stack(variable_t * variable, closure_t * closure, register_e targ
 	node->operand1.type = OPERAND_TYPE_REG;
 	node->operand1.reg = target_register;
 
-	switch (variable->size) {
+	switch (variable->type->size) {
 		case 4: /* TODO: YAY INT ONLY */
 			node->operand2.type = OPERAND_TYPE_STACK_DWORD;
 			break;
@@ -923,14 +923,16 @@ bool gen_asm_x86(function_node_t * function_list, int out_fd)
 	while (current_function != NULL)
 	{
 		type_space_t * type_space = create_empty_type_space(NULL);
+		/* TODO: the fuck this is here, we should not initialize by hand */
 		closure_t function_closure = {
-				.next_closure = NULL,
-				.parent = NULL,
-				.instructions = NULL,
-				.variables = NULL,
-				.label_count = 1,
-				.closure_name = current_function->function->identifier,
-				.break_to_instruction = NULL
+			.next_closure = NULL,
+			.parent = NULL,
+			.instructions = NULL,
+			.variables = NULL,
+			.label_count = 1,
+			.closure_name = current_function->function->identifier,
+			.break_to_instruction = NULL,
+			.parameters = NULL
 		};
 
 		/* add parameters to the function closure */
@@ -948,7 +950,7 @@ bool gen_asm_x86(function_node_t * function_list, int out_fd)
 			if (!allocate_variable(
 				&function_closure,
 				current_parameter->parameter_identifier,
-				VALUE_TYPE_VARIABLE,
+				VALUE_TYPE_PARAMETER,
 				current_parameter_type
 			)) {
 				return false;

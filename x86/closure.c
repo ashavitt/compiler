@@ -31,22 +31,30 @@ variable_t * get_variable(closure_t * closure, char * identifier)
 
 	while (closure != NULL)
 	{
+		current_variable = closure->parameters;
+		while (current_variable != NULL) {
+			if (0 == strcmp(current_variable->variable_name, identifier)) {
+				return current_variable;
+			}
+			current_variable = current_variable->next;
+		}
+
 		current_variable = closure->variables;
 		while (current_variable != NULL) {
-		if (0 == strcmp(current_variable->variable_name, identifier)) {
-			return current_variable;
-		}
-		current_variable = current_variable->next;
+			if (0 == strcmp(current_variable->variable_name, identifier)) {
+				return current_variable;
+			}
+			current_variable = current_variable->next;
 		}
 
 		/* go up in the closure heirarchy */
 		closure = closure->parent;
-
 	}
+
 	return NULL;
 }
 
-variable_t * allocate_variable(
+static variable_t * allocate_parameter(
 	closure_t * closure,
 	char * identifier,
 	value_type_e type,
@@ -57,8 +65,6 @@ variable_t * allocate_variable(
 	if (NULL == new_variable) {
 		return NULL;
 	}
-	new_variable->next = closure->variables;
-    new_variable->variable_type = type;
 
 	/* named variable, check for name collision first */
 	if ((strcmp(identifier, "") != 0) &&
@@ -68,14 +74,17 @@ variable_t * allocate_variable(
 		return NULL;
 	}
 
+	new_variable->next = closure->parameters;
+	new_variable->variable_type = type;
+
 	/* check the previous closures */
 	while (current_closure != NULL)
 	{
-		if (NULL != current_closure->variables)
+		if (NULL != current_closure->parameters)
 		{
 			/* add the variable at the end of the stack */
 			new_variable->position = (position_t){
-				.stack_offset = current_closure->variables->position.stack_offset - 4
+				.stack_offset = current_closure->parameters->position.stack_offset + current_closure->parameters->type->size
 			};
 			break;
 		}
@@ -86,12 +95,70 @@ variable_t * allocate_variable(
 	if (NULL == current_closure)
 	{
 		new_variable->position = (position_t){
-			.stack_offset = -4
+			.stack_offset = 8
 		};
 	}
 
 	new_variable->variable_name = identifier;
-	new_variable->size = variable_type->size;
+	new_variable->type = variable_type;
+	closure->parameters = new_variable;
+
+	return new_variable;
+}
+
+variable_t * allocate_variable(
+	closure_t * closure,
+	char * identifier,
+	value_type_e type,
+	type_t *variable_type
+) {
+	closure_t * current_closure = closure;
+	variable_t * new_variable = NULL;
+
+
+	if (type == VALUE_TYPE_PARAMETER) {
+		return allocate_parameter(closure, identifier, type, variable_type);
+	}
+
+	new_variable = malloc(sizeof(*new_variable));
+	if (NULL == new_variable) {
+		return NULL;
+	}
+
+	/* named variable, check for name collision first */
+	if ((strcmp(identifier, "") != 0) &&
+		(NULL != get_variable(closure, identifier))
+	) {
+		free(new_variable);
+		return NULL;
+	}
+
+	new_variable->next = closure->variables;
+    new_variable->variable_type = type;
+
+	/* check the previous closures */
+	while (current_closure != NULL)
+	{
+		if (NULL != current_closure->variables)
+		{
+			/* add the variable at the end of the stack */
+			new_variable->position = (position_t){
+				.stack_offset = current_closure->variables->position.stack_offset - variable_type->size
+			};
+			break;
+		}
+		current_closure = current_closure->parent;
+	}
+
+	/* if no variable was found - this is the first */
+	if (NULL == current_closure)
+	{
+		new_variable->position = (position_t){
+			.stack_offset = -variable_type->size
+		};
+	}
+
+	new_variable->variable_name = identifier;
 	new_variable->type = variable_type;
 	closure->variables = new_variable;
 

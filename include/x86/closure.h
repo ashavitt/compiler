@@ -10,6 +10,7 @@
 #include <types.h>
 
 typedef enum {
+	VALUE_TYPE_PARAMETER,
     VALUE_TYPE_VARIABLE,
     VALUE_TYPE_EXPRESSION_RESULT
 } value_type_e;
@@ -56,7 +57,6 @@ typedef struct variable_s {
     value_type_e variable_type;
     position_t position;
     statement_expression_t * evaluated_expression;
-    size_t size;
 	type_t *type;
     union {
         char * variable_name;
@@ -69,6 +69,7 @@ typedef struct closure {
     struct closure * parent;
     asm_node_t * instructions;
     variable_t * variables;
+	variable_t * parameters;
     unsigned long label_count;
     char * closure_name;
     asm_node_t * break_to_instruction;
