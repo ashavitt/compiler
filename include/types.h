@@ -31,6 +31,7 @@ typedef struct type_space_s {
     type_t *struct_space;
     type_t *enum_space;
     type_t *union_space;
+	struct type_space_s *parent;
 } type_space_t;
 
 type_t *lookup_type(
@@ -54,7 +55,7 @@ bool is_same_type(
     type_t *second_type
 );
 
-type_space_t * create_empty_type_space();
+type_space_t * create_empty_type_space(type_space_t *parent);
 
 bool type_check_block(type_space_t *type_space, code_block_t *code_block, closure_t *closure);
 

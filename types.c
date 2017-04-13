@@ -29,9 +29,9 @@ bool is_same_type(
 	return true;
 }
 
-type_t *lookup_type(
-		type_space_t *type_space,
-		char *type_name
+static type_t *lookup_type_in_space(
+	type_space_t *type_space,
+	char *type_name
 ) {
 	type_t *current_type = NULL;
 
@@ -60,6 +60,20 @@ type_t *lookup_type(
 	}
 
 	return NULL;
+}
+
+type_t *lookup_type(
+	type_space_t *type_space,
+	char *type_name
+) {
+	type_space_t *current_type_space = type_space;
+	type_t *result = NULL;
+	do {
+		result = lookup_type_in_space(current_type_space, type_name);
+		current_type_space = current_type_space->parent;
+	}
+	while ((result == NULL) && (current_type_space != NULL));
+	return result;
 }
 
 static unsigned long calculate_size(type_space_t *type_space, declaration_type_t *type);
@@ -269,7 +283,7 @@ type_t *get_declaration_type(
 		!new_type->modifier.is_const &&
 		!new_type->modifier.is_register &&
 		new_type->deref_count == 0
-			) {
+	) {
 		return lookup_type(type_space, declaration->type.type_base_type.identifier);
 	}
 
@@ -304,9 +318,9 @@ type_t *get_declaration_type(
 
 
 static bool add_primitive(
-		type_space_t *type_space,
-		char *primitive_identifier,
-		unsigned long size
+	type_space_t *type_space,
+	char *primitive_identifier,
+	unsigned long size
 ) {
 	type_t *current_type = NULL;
 
@@ -331,7 +345,7 @@ static bool add_primitive(
 	return true;
 }
 
-type_space_t *create_empty_type_space() {
+type_space_t *create_empty_type_space(type_space_t *parent) {
 	type_space_t *empty_space = malloc(sizeof(*empty_space));
 	if (NULL == empty_space) {
 		return NULL;
@@ -362,6 +376,8 @@ type_space_t *create_empty_type_space() {
 	if (!add_primitive(empty_space, "long", 8)) {
 		return NULL;
 	}
+
+	empty_space->parent = parent;
 
 	return empty_space;
 }
