@@ -276,6 +276,19 @@ void debug_loop(statement_loop_t * loop, int offset)
 	debug_code_block(loop->loop_body, offset + 1);
 }
 
+void debug_call_function(statement_call_function_t * call_function, int offset)
+{
+	statement_call_function_param_t * temp_param = call_function->params;
+	printf("%*s%s\n", offset * debug_shift_width, "", call_function->function_name);
+
+	printf("%*sPARAMETERS:\n", offset * debug_shift_width, "");
+	while (temp_param != NULL)
+	{
+		debug_expression(temp_param->parameter, offset + 1);
+		temp_param = temp_param->next;
+	}
+}
+
 void debug_code_block(
 	code_block_t * code_block, int offset)
 {
@@ -311,6 +324,7 @@ void debug_code_block(
 				break;
 			case STATEMENT_TYPE_CALL_FUNCTION:
 				printf("call function\n");
+				debug_call_function(&(statement->call_function), offset + 1);
 				break;
 		}
 		statement = statement->next;
