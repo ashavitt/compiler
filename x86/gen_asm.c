@@ -141,8 +141,8 @@ bool generate_assignment(statement_expression_t * expression, closure_t * closur
 bool generate_arithmetic_operator(statement_expression_t * expression, closure_t * closure, opcode_e opcode) {
 	bool success = false;
 	variable_t * result = NULL;
-	expression_op_t * addition = &expression->exp_op;
-	asm_node_t *node_op = NULL;
+	expression_op_t * arithmetic_expression = &expression->exp_op;
+	asm_node_t * node_op = NULL;
 
 	node_op =  malloc(sizeof(*node_op));
 	if (NULL == node_op) {
@@ -150,20 +150,20 @@ bool generate_arithmetic_operator(statement_expression_t * expression, closure_t
 		goto cleanup;
 	}
 
-	if(!generate_expression(addition->exp1, closure)) {
+	if(!generate_expression(arithmetic_expression->exp1, closure)) {
 		return false;
 	}
 
-	if(!generate_expression(addition->exp2, closure)) {
+	if(!generate_expression(arithmetic_expression->exp2, closure)) {
 		return false;
 	}
 
-	if (!load_expression_to_register(addition->exp1, closure, REGISTER_EAX)) {
+	if (!load_expression_to_register(arithmetic_expression->exp1, closure, REGISTER_EAX)) {
 		success = false;
 		goto cleanup;
 	}
 
-	if (!load_expression_to_register(addition->exp2, closure, REGISTER_EBX)) {
+	if (!load_expression_to_register(arithmetic_expression->exp2, closure, REGISTER_EBX)) {
 		success = false;
 		goto cleanup;
 	}
@@ -174,7 +174,7 @@ bool generate_arithmetic_operator(statement_expression_t * expression, closure_t
 	node_op->operand2.reg = REGISTER_EBX;
 	node_op->opcode = opcode;
 
-	result = allocate_variable_from_destination(addition->exp1, closure);
+	result = allocate_variable_from_destination(arithmetic_expression->exp1, closure);
 	if (NULL == result) {
 		success = false;
 		goto cleanup;
@@ -283,6 +283,125 @@ bool generate_multiplication(statement_expression_t * expression, closure_t * cl
 	return true;
 }
 
+bool generate_comparison_operator(statement_expression_t * expression, closure_t * closure, operator_type_e operator_type)
+{
+	asm_node_t * set_result_op = malloc(sizeof(*set_result_op));
+	bool success = false;
+	bool signed_operators = false;
+	variable_t * result = NULL;
+	expression_op_t * comparison_expression = &expression->exp_op;
+	asm_node_t * substraction_op = NULL;
+	opcode_e set_result_opcode;
+
+	/* TODO set the signed_operators variable accordingly */
+
+	substraction_op =  malloc(sizeof(*substraction_op));
+	if (NULL == substraction_op) {
+		success = false;
+		goto cleanup;
+	}
+
+	/* compute the operands first */
+	if (!generate_expression(comparison_expression->exp1, closure)) {
+		success = false;
+		return false;
+	}
+
+	if (!generate_expression(comparison_expression->exp2, closure)) {
+		success = false;
+		return false;
+	}
+
+	if (!load_expression_to_register(comparison_expression->exp1, closure, REGISTER_EAX)) {
+		success = false;
+		goto cleanup;
+	}
+
+	if (!load_expression_to_register(comparison_expression->exp2, closure, REGISTER_EBX)) {
+		success = false;
+		goto cleanup;
+	}
+
+	/* substract the operands for comparison */
+
+	substraction_op->operand1.type = OPERAND_TYPE_REG;
+	substraction_op->operand1.reg = REGISTER_EAX;
+	substraction_op->operand2.type = OPERAND_TYPE_REG;
+	substraction_op->operand2.reg = REGISTER_EBX;
+	substraction_op->opcode = OPCODE_SUB;
+
+	add_instruction_to_closure(substraction_op, closure);
+
+	/* calculate the result */
+
+	switch (comparison_expression->op)
+	{
+		case OP_EQUAL:
+			set_result_opcode = OPCODE_SETE;
+			break;
+		case OP_NEQUAL:
+			set_result_opcode = OPCODE_SETNE;
+			break;
+		case OP_LESS:
+			if (signed_operators) {
+				set_result_opcode = OPCODE_SETL;
+			} else {
+				set_result_opcode = OPCODE_SETB;
+			}
+			break;
+		case OP_LESS_EQUAL:
+			if (signed_operators) {
+				set_result_opcode = OPCODE_SETLE;
+			} else {
+				set_result_opcode = OPCODE_SETBE;
+			}
+			break;
+		case OP_GREATER:
+			if (signed_operators) {
+				set_result_opcode = OPCODE_SETG;
+			} else {
+				set_result_opcode = OPCODE_SETA;
+			}
+			break;
+		case OP_GREATER_EQUAL:
+			if (signed_operators) {
+				set_result_opcode = OPCODE_SETGE;
+			} else {
+				set_result_opcode = OPCODE_SETAE;
+			}
+			break;
+	}
+
+	set_result_op->operand1.type = OPERAND_TYPE_REG;
+	set_result_op->operand1.reg = REGISTER_ECX;
+	set_result_op->opcode = set_result_opcode;
+
+	add_instruction_to_closure(set_result_op, closure);
+
+	result = allocate_variable_from_destination(comparison_expression->exp1, closure);
+	if (NULL == result) {
+		success = false;
+		goto cleanup;
+	}
+
+	if (!store_register_to_variable(result, REGISTER_ECX, closure)) {
+		success = false;
+		goto cleanup;
+	}
+
+	result->evaluated_expression = expression;
+
+	success = true;
+
+cleanup:
+	if (!success) {
+		if (substraction_op != NULL) {
+			free(substraction_op);
+		}
+	}
+	return success;
+}
+
 bool generate_operation(statement_expression_t * expression, closure_t * closure) {
 	switch (expression->exp_op.op) {
 		case OP_ASSIGN:
@@ -295,21 +414,28 @@ bool generate_operation(statement_expression_t * expression, closure_t * closure
 			return generate_arithmetic_operator(expression, closure, OPCODE_OR);
 		case OP_SUB:
 			return generate_arithmetic_operator(expression, closure, OPCODE_SUB);
-        case OP_NEG:
-            return generate_unary_operator(expression, closure, OPCODE_NEG);
+		case OP_NEG:
+			return generate_unary_operator(expression, closure, OPCODE_NEG);
 		case OP_MUL:
 			return generate_multiplication(expression, closure);
-        case OP_PLUS:
-            /* basically just transfer expression result to the current one */
-            if (!generate_expression(expression->exp_op.exp1, closure)) {
-                return false;
-            }
-            variable_t * result = lookup_expression_result(expression->exp_op.exp1, closure);
-            if (result == NULL) {
-                return false;
-            }
-            result->evaluated_expression = expression;
-            return true;
+		case OP_PLUS:
+			/* basically just transfer expression result to the current one */
+			if (!generate_expression(expression->exp_op.exp1, closure)) {
+				return false;
+			}
+			variable_t * result = lookup_expression_result(expression->exp_op.exp1, closure);
+			if (result == NULL) {
+				return false;
+			}
+			result->evaluated_expression = expression;
+			return true;
+		case OP_EQUAL:
+		case OP_NEQUAL:
+		case OP_LESS:
+		case OP_LESS_EQUAL:
+		case OP_GREATER:
+		case OP_GREATER_EQUAL:
+			return generate_comparison_operator(expression, closure, expression->exp_op.op);
 		default:
 			return false;
 	}
@@ -591,7 +717,18 @@ static char * instruction_to_text[] = {
 	"jz",
 	"jnz",
 	"nop",
-	"neg"
+	"neg",
+	"seta",
+	"setae",
+	"setb",
+	"setbe",
+	"setc",
+	"sete",
+	"setne",
+	"setg",
+	"setge",
+	"setl",
+	"setle",
 };
 
 static char * register_to_text[] = {
