@@ -304,7 +304,13 @@ void debug_code_block(
 }
 
 void debug_ast(
-	code_file_t * code_file)
+	function_node_t * function_list)
 {
-	debug_code_block(code_file->first_block, 0);
+	function_node_t * current_function = function_list;
+	
+	while (current_function != NULL)
+	{
+		debug_code_block(current_function->function->function_code, 0);
+		current_function = current_function->next;
+	}
 }

@@ -16,7 +16,7 @@ static int errors = 0;
 static int yydebug = 0;
 
 int yylex();
-void yyerror(code_file_t * code_file, const char * s);
+void yyerror(function_node_t * function_list, const char * s);
 
 int install_symbol(const char * symbol_name)
 {
@@ -51,7 +51,7 @@ int lookup_symbol(const char * symbol_name)
 
 %}
 
-%parse-param {code_file_t * code_file}
+%parse-param {function_node_t * function_list}
 
 %union {
 char * identifier_name;
@@ -121,9 +121,7 @@ function_declaration_t * function_declaration;
 
 %%
 
-file : block { code_file->first_block = $1; } /* TODO remove */
-     | function_declaration { code_file->first_block = $1->function_code; }
-     ;
+file : function_declaration { register_new_function($1, function_list); }
 
 function_declaration : declaration_without_modifier '(' function_parameters ')' block { $$ = create_function_declaration($1, $3, $5); }
 
@@ -238,30 +236,33 @@ int main(int argc, char * argv[])
 {
 	extern FILE * yyin;
 
-	code_file_t code_file = { 0 };
+	function_node_t function_list = (function_node_t) {
+		.function = NULL,
+		.next = NULL
+	};
 
 	argv++;
 	argc--;
 	yyin = fopen(argv[0], "r");
 	yydebug = 1;
 	errors = 0;
-	if (0 != yyparse(&code_file)) {
+	if (0 != yyparse(&function_list)) {
 		return -1;
 	}
 
-	debug_ast(&code_file);
-    /* TODO: pass typespace to generate assembly */
+	debug_ast(function_list.next);
+	/* TODO: pass typespace to generate assembly */
 	printf("ASSEMBLY:\n");
-    if(!gen_asm_x86(&code_file, 1)) {
-        printf("\nFailed generating assembly!\n");
-    } else {
-        printf("\n");
-    }
-    fflush(stdout);
+	if(!gen_asm_x86(function_list.next, 1)) {
+		printf("\nFailed generating assembly!\n");
+	} else {
+		printf("\n");
+	}
+	fflush(stdout);
     return 0;
 }
 
-void yyerror(code_file_t * code_file, const char * s)
+void yyerror(function_node_t * function_list, const char * s)
 {
 	printf("%s\n", s);
 }

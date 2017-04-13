@@ -682,7 +682,7 @@ bool generate_break(closure_t * closure, type_space_t *type_space)
 bool parse_block(code_block_t * code_block, closure_t * closure, type_space_t *type_space)
 {
 	statement_t * current_statement = code_block->first_line;
-	type_space_t *new_block_space = create_empty_type_space(type_space);
+	type_space_t * new_block_space = create_empty_type_space(type_space);
 	if (NULL == new_block_space) {
 		printf("Failed allocating new type space");
 		return false;
@@ -891,30 +891,36 @@ bool generate_assembly(closure_t * closure, int out_fd) {
 	return true;
 }
 
-bool gen_asm_x86(code_file_t * code_file, int out_fd)
+bool gen_asm_x86(function_node_t * function_list, int out_fd)
 {
-	type_space_t *type_space = create_empty_type_space(NULL);
-	closure_t file_closure = {
-			.next_closure = NULL,
-			.parent = NULL,
-			.instructions = NULL,
-			.variables = NULL,
-			.label_count = 1,
-			.closure_name = "global_closure",
-			.break_to_instruction = NULL
-	};
-	/* TODO: shouldn't closjure be per-block? */
-	code_block_t * code_block = code_file->first_block;
-	if (NULL == type_space) {
-		printf("Failed allocating type space");
-		return false;
-	}
-	while (code_block != NULL)
+	function_node_t * current_function = function_list;
+	while (function_list != NULL)
 	{
-		if(!parse_block(code_block, &file_closure, type_space)) {
+		type_space_t * type_space = create_empty_type_space(NULL);
+		closure_t function_closure = {
+				.next_closure = NULL,
+				.parent = NULL,
+				.instructions = NULL,
+				.variables = NULL,
+				.label_count = 1,
+				.closure_name = current_function->function->identifier,
+				.break_to_instruction = NULL
+		};
+		/* TODO: shouldn't closure be per-block? */
+		code_block_t * code_block = current_function->function->function_code;
+		if (NULL == type_space) {
+			printf("Failed allocating type space");
+			return false;
+		}
+
+		if (!parse_block(code_block, &function_closure, type_space)) {
 			printf("Failed parsing to intermediate RISC\nGenerating assembly anyway.\n");
 		}
-		code_block = NULL; // TODO add the other blocks
+
+		if (!generate_assembly(&function_closure, out_fd))
+		{
+			return false;
+		}
 	}
-	return generate_assembly(&file_closure, out_fd);
+	return true;
 }

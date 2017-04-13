@@ -3,8 +3,9 @@
 
 typedef struct code_block code_block_t;
 
-#include "ast_nodes.h"
-#include "ast_flow.h"
+#include <ast_nodes.h>
+#include <ast_flow.h>
+#include <functions.h>
 
 typedef enum statement_type
 {
@@ -47,7 +48,7 @@ statement_t * create_statement_loop(statement_loop_t * loop);
 statement_t * create_statement_type_declaration(statement_type_declaration_t * decl);
 statement_t * create_statement_break();
 void add_statement(code_block_t * file, statement_t * statement);
-void debug_ast(code_file_t * code_file);
+void debug_ast(function_node_t * function_list);
 void debug_code_block(code_block_t * code_block, int offset);
 
 #endif

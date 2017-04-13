@@ -1,12 +1,13 @@
 #ifndef __FUNCTIONS_H__
 #define __FUNCTIONS_H__
 
-#include <ast_nodes.h>
-#include <ast.h>
 
 typedef struct function_declaration_s function_declaration_t;
 typedef struct function_parameter_s function_parameter_t;
 typedef struct function_node_s function_node_t;
+
+#include <ast.h>
+#include <ast_nodes.h>
 
 struct function_node_s
 {
