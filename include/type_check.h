@@ -3,6 +3,6 @@
 
 #include <types.h>
 
-
+/* TODO: move type check definitions here */
 
 #endif

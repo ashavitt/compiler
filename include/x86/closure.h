@@ -57,7 +57,7 @@ typedef struct variable_s {
     position_t position;
     statement_expression_t * evaluated_expression;
     size_t size;
-	type_t type;
+	type_t *type;
     union {
         char * variable_name;
     };

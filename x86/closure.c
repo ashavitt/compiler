@@ -120,8 +120,7 @@ void add_label_to_node(
 
 closure_t * enter_new_closure(
 	closure_t * old_closure
-	)
-{
+) {
 	closure_t * new_closure = malloc(sizeof(*new_closure));
 
 	new_closure->parent = old_closure;

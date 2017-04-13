@@ -460,8 +460,9 @@ bool generate_expression(statement_expression_t * expression, closure_t * closur
 }
 
 bool generate_declaration(statement_t * statement, closure_t * closure) {
-	/* TODO: check type of declaration */
-	if (NULL == allocate_variable(closure, 4, statement->declaration.identifier, VALUE_TYPE_VARIABLE)) {
+	/* the type checker should have already done this */
+	/* TODO: should we remove this check? */
+	if (NULL == get_variable(closure, statement->declaration.identifier)) {
 		return false;
 	}
 
@@ -861,24 +862,16 @@ bool generate_assembly(closure_t * closure, int out_fd) {
 	return true;
 }
 
-bool gen_asm_x86(code_file_t * code_file, int out_fd)
+bool gen_asm_x86(code_file_t * code_file, int out_fd, closure_t *file_closure)
 {
-	closure_t file_closure = {
-		.next_closure = NULL,
-		.parent = NULL,
-		.instructions = NULL,
-		.variables = NULL,
-		.label_count = 1,
-		.closure_name = "global_closure",
-		.break_to_instruction = NULL
-	};
+	/* TODO: shouldn't closjure be per-block? */
 	code_block_t * code_block = code_file->first_block;
 	while (code_block != NULL)
 	{
-		if(!parse_block(code_block, &file_closure)) {
+		if(!parse_block(code_block, file_closure)) {
 			printf("Failed parsing to intermediate RISC\nGenerating assembly anyway.\n");
 		}
 		code_block = NULL; // TODO add the other blocks
 	}
-	return generate_assembly(&file_closure, out_fd);
+	return generate_assembly(file_closure, out_fd);
 }
