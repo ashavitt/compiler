@@ -15,6 +15,7 @@ set(SOURCE_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/types.c
     ${CMAKE_CURRENT_SOURCE_DIR}/x86/gen_asm.c
     ${CMAKE_CURRENT_SOURCE_DIR}/x86/closure.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/functions.c
 )
 
 include_directories(${CMAKE_BINARY_DIR}/lex ${CMAKE_BINARY_DIR}/yacc ${CMAKE_SOURCE_DIR}/include)
