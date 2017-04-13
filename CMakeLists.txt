@@ -29,8 +29,8 @@ add_custom_command(OUTPUT ${CMAKE_BINARY_DIR}/yacc/y.tab.c
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
 )
 
-add_executable(amircc
+add_executable(aramcc
     ${SOURCE_FILES}
 )
 
-target_link_libraries(amircc fl)
+target_link_libraries(aramcc fl)
