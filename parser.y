@@ -2,6 +2,7 @@
 #include <ast.h>
 #include <ast_nodes.h>
 #include <ast_flow.h>
+#include <ast_functions.h>
 #include <functions.h>
 }
 
@@ -63,6 +64,8 @@ statement_expression_t * statement_expression;
 statement_declaration_t * statement_declaration;
 statement_ifelse_t * statement_ifelse;
 statement_loop_t * statement_loop;
+statement_call_function_t * statement_call_function;
+statement_call_function_param_t * statement_call_function_param;
 statement_type_declaration_t * statement_type_declaration;
 char * declaration_type_primitive;
 declaration_type_modifier_t declaration_modifier;
@@ -97,6 +100,8 @@ function_declaration_t * function_declaration;
 %type <statement_loop> loop
 %type <statement_loop> for_loop
 %type <statement_loop> while_loop
+%type <statement_call_function> function_call
+%type <statement_call_function_param> function_call_params
 %type <declaration_type_primitive> declaration_type_primitive
 %type <declaration_modifier> declaration_modifier
 %type <declaration_indirections> declaration_indirections
@@ -121,7 +126,9 @@ function_declaration_t * function_declaration;
 
 %%
 
-file : function_declaration { register_new_function($1, function_list); }
+file : file function_declaration { register_new_function($2, function_list); }
+     | function_declaration { register_new_function($1, function_list); }
+     ;
 
 function_declaration : declaration_without_modifier '(' function_parameters ')' block { $$ = create_function_declaration($1, $3, $5); }
 		     | declaration_without_modifier '(' ')' block { $$ = create_function_declaration($1, NULL, $4); }
@@ -150,7 +157,16 @@ statement : expr ';' { $$ = create_statement_expression($1); }
 	  | ifelse { $$ = create_statement_ifelse($1); }
 	  | loop { $$ = create_statement_loop($1); }
 	  | TOK_BREAK ';' { $$ = create_statement_break(); }
+	  | function_call ';' { $$ = create_statement_call_function($1); }
 	  ;
+
+function_call : TOK_IDENTIFIER '(' ')' { $$ = create_call_function_statement($1, NULL); }
+	      | TOK_IDENTIFIER '(' function_call_params ')' { $$ = create_call_function_statement($1, $3); }
+	      ;
+
+function_call_params : function_call_params ',' expr { $$ = add_call_function_parameter($1, $3); }
+		     | expr { $$ = add_call_function_parameter(NULL, $1); }
+		     ;
 
 ifelse : TOK_IF '(' expr ')' block TOK_ELSE block { $$ = create_ifelse_statement($3, $5, $7); }
        | TOK_IF '(' expr ')' block { $$ = create_ifelse_statement($3, $5, NULL); }

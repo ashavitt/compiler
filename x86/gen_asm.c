@@ -765,6 +765,7 @@ static char * instruction_to_text[] = {
 	"and",
 	"or",
 	"jmp",
+	"call",
 	"push",
 	"pop",
 	"jz",

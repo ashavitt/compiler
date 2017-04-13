@@ -1,7 +1,6 @@
 #ifndef __FUNCTIONS_H__
 #define __FUNCTIONS_H__
 
-
 typedef struct function_declaration_s function_declaration_t;
 typedef struct function_parameter_s function_parameter_t;
 typedef struct function_node_s function_node_t;
@@ -30,6 +29,7 @@ struct function_parameter_s
 	declaration_type_t parameter_type;
 	struct function_parameter_s * next;
 };
+
 
 function_declaration_t * create_function_declaration(
 	statement_declaration_t * return_value_type,
