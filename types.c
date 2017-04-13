@@ -29,9 +29,9 @@ bool is_same_type(
 	return true;
 }
 
-type_t *lookup_type(
-		type_space_t *type_space,
-		char *type_name
+static type_t *lookup_type_in_space(
+	type_space_t *type_space,
+	char *type_name
 ) {
 	type_t *current_type = NULL;
 
@@ -60,6 +60,20 @@ type_t *lookup_type(
 	}
 
 	return NULL;
+}
+
+type_t *lookup_type(
+	type_space_t *type_space,
+	char *type_name
+) {
+	type_space_t *current_type_space = type_space;
+	type_t *result = NULL;
+	do {
+		result = lookup_type_in_space(current_type_space, type_name);
+		current_type_space = current_type_space->parent;
+	}
+	while ((result == NULL) && (current_type_space != NULL));
+	return result;
 }
 
 static unsigned long calculate_size(type_space_t *type_space, declaration_type_t *type);
@@ -269,7 +283,7 @@ type_t *get_declaration_type(
 		!new_type->modifier.is_const &&
 		!new_type->modifier.is_register &&
 		new_type->deref_count == 0
-			) {
+	) {
 		return lookup_type(type_space, declaration->type.type_base_type.identifier);
 	}
 
@@ -304,9 +318,9 @@ type_t *get_declaration_type(
 
 
 static bool add_primitive(
-		type_space_t *type_space,
-		char *primitive_identifier,
-		unsigned long size
+	type_space_t *type_space,
+	char *primitive_identifier,
+	unsigned long size
 ) {
 	type_t *current_type = NULL;
 
@@ -331,7 +345,7 @@ static bool add_primitive(
 	return true;
 }
 
-type_space_t *create_empty_type_space() {
+type_space_t *create_empty_type_space(type_space_t *parent) {
 	type_space_t *empty_space = malloc(sizeof(*empty_space));
 	if (NULL == empty_space) {
 		return NULL;
@@ -362,6 +376,8 @@ type_space_t *create_empty_type_space() {
 	if (!add_primitive(empty_space, "long", 8)) {
 		return NULL;
 	}
+
+	empty_space->parent = parent;
 
 	return empty_space;
 }
@@ -467,8 +483,6 @@ static bool type_check_expression(
 	return true;
 }
 
-static bool type_check_block(type_space_t *type_space, code_block_t *code_block, closure_t *closure);
-
 static bool type_check_declaration(
 	type_space_t *type_space,
 	statement_declaration_t *declaration,
@@ -516,9 +530,9 @@ static bool type_check_loop(
 	) {
 		return false;
 	}
-	if (!type_check_block(type_space, loop->loop_body, closure)) {
+	/*if (!type_check_block(type_space, loop->loop_body, closure)) {
 		return false;
-	}
+	}*/
 	/* TODO: shouldn't we have bool? */
 	return is_same_type(type_space, condition_type, lookup_type(type_space, "int"));
 }
@@ -530,9 +544,9 @@ static bool type_check_if(
 ) {
 	type_t *if_type = NULL;
 	if (
-		!type_check_expression(type_space, if_statement->if_expr, closure, &if_type ) ||
+		!type_check_expression(type_space, if_statement->if_expr, closure, &if_type ) /* ||
 		!type_check_block(type_space, if_statement->if_block, closure) ||
-		!type_check_block(type_space, if_statement->else_block, closure)
+		!type_check_block(type_space, if_statement->else_block, closure) */
 	) {
 		return false;
 	}
@@ -569,7 +583,7 @@ static bool type_check_statement(
 	return true;
 }
 
-static bool type_check_block(type_space_t *type_space, code_block_t *code_block, closure_t *closure) {
+bool type_check_block(type_space_t *type_space, code_block_t *code_block, closure_t *closure) {
 	statement_t *current_statement = code_block->first_line;
 	while (current_statement != NULL) {
 		if (!type_check_statement(type_space, current_statement, closure)) {
@@ -578,11 +592,6 @@ static bool type_check_block(type_space_t *type_space, code_block_t *code_block,
 		current_statement = current_statement->next;
 	}
 	return true;
-}
-
-bool type_check(type_space_t *type_space, code_file_t *code_file, closure_t *closure) {
-	/* in the future, when we'll have more than one block in code_file, iterate through them and type-check them */
-	return type_check_block(type_space, code_file->first_block, closure);
 }
 
 static void print_type(type_t *type) {

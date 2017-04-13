@@ -236,24 +236,9 @@ declaration_modifier : TOK_SIGNED { $$ = (declaration_type_modifier_t) {}; }
 
 int main(int argc, char * argv[])
 {
-    type_space_t *type_space = create_empty_type_space();
-    closure_t file_closure = {
-        .next_closure = NULL,
-        .parent = NULL,
-        .instructions = NULL,
-        .variables = NULL,
-        .label_count = 1,
-        .closure_name = "global_closure",
-        .break_to_instruction = NULL
-    };
 	extern FILE * yyin;
 
 	code_file_t code_file = { 0 };
-
-    if (type_space == NULL) {
-        printf("Failed allocating typespace\n");
-        return -1;
-    }
 
 	argv++;
 	argc--;
@@ -265,14 +250,9 @@ int main(int argc, char * argv[])
 	}
 
 	debug_ast(&code_file);
-	if (!type_check(type_space, &code_file, &file_closure)) {
-        printf("Type check did not pass!\n");
-        return 0;
-    }
-    debug_types(type_space);
     /* TODO: pass typespace to generate assembly */
 	printf("ASSEMBLY:\n");
-    if(!gen_asm_x86(&code_file, 1, &file_closure)) {
+    if(!gen_asm_x86(&code_file, 1)) {
         printf("\nFailed generating assembly!\n");
     } else {
         printf("\n");

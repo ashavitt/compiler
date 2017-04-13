@@ -2,8 +2,11 @@
 #include <string.h>
 #include <stdlib.h>
 
-variable_t * lookup_expression_result(statement_expression_t * expression, closure_t * closure)
-{
+variable_t * lookup_expression_result(
+	statement_expression_t * expression,
+	closure_t * closure,
+	type_space_t *type_space
+) {
 	variable_t * current_variable = NULL;
 
 	while (closure != NULL)

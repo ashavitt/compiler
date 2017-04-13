@@ -100,7 +100,8 @@ void add_instruction_to_closure(
 
 variable_t * lookup_expression_result(
     statement_expression_t * expression,
-    closure_t * closure
+    closure_t * closure,
+	type_space_t *type_space
 );
 
 variable_t * get_variable(

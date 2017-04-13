@@ -4,6 +4,8 @@
 #include <ast.h>
 #include <ast_nodes.h>
 
+/* should type space be per-closure ?? */
+
 typedef struct closure closure_t;
 typedef struct type_field_s type_field_t;
 
@@ -29,6 +31,7 @@ typedef struct type_space_s {
     type_t *struct_space;
     type_t *enum_space;
     type_t *union_space;
+	struct type_space_s *parent;
 } type_space_t;
 
 type_t *lookup_type(
@@ -52,13 +55,9 @@ bool is_same_type(
     type_t *second_type
 );
 
-type_space_t * create_empty_type_space();
+type_space_t * create_empty_type_space(type_space_t *parent);
 
-bool type_check(
-	type_space_t *type_space,
-	code_file_t *code_file,
-	closure_t *clojure
-);
+bool type_check_block(type_space_t *type_space, code_block_t *code_block, closure_t *closure);
 
 void debug_types(type_space_t *type_space);
 
