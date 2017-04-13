@@ -2,6 +2,7 @@
 #include <ast.h>
 #include <ast_nodes.h>
 #include <ast_flow.h>
+#include <functions.h>
 }
 
 %{
@@ -67,6 +68,8 @@ char * declaration_type_primitive;
 declaration_type_modifier_t declaration_modifier;
 unsigned long declaration_indirections;
 field_t * type_declaration_struct_field_list;
+function_parameter_t * function_parameters;
+function_declaration_t * function_declaration;
 }
 
 %start file
@@ -99,6 +102,9 @@ field_t * type_declaration_struct_field_list;
 %type <declaration_indirections> declaration_indirections
 %type <type_declaration_struct_field_list> type_declaration_struct_field_list
 
+%type <function_parameters> function_parameters
+%type <function_declaration> function_declaration
+
 %right '='
 %left TOK_OP_OR
 %left TOK_OR_AND
@@ -115,7 +121,15 @@ field_t * type_declaration_struct_field_list;
 
 %%
 
-file : block { code_file->first_block = $1; }
+file : block { code_file->first_block = $1; } /* TODO remove */
+     | function_declaration { code_file->first_block = $1->function_code; }
+     ;
+
+function_declaration : declaration_without_modifier '(' function_parameters ')' block { $$ = create_function_declaration($1, $3, $5); }
+
+function_parameters : function_parameters ',' declaration_without_modifier { $$ = add_function_parameter($1, $3); }
+		    | declaration_without_modifier { $$ = add_function_parameter(NULL, $1); }
+		    ;
 
 block : '{' lines '}' { $$ = $2; }
       | statement { code_block_t * code_block = malloc(sizeof(code_block_t));
