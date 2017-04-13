@@ -467,8 +467,6 @@ static bool type_check_expression(
 	return true;
 }
 
-static bool type_check_block(type_space_t *type_space, code_block_t *code_block, closure_t *closure);
-
 static bool type_check_declaration(
 	type_space_t *type_space,
 	statement_declaration_t *declaration,
@@ -516,9 +514,9 @@ static bool type_check_loop(
 	) {
 		return false;
 	}
-	if (!type_check_block(type_space, loop->loop_body, closure)) {
+	/*if (!type_check_block(type_space, loop->loop_body, closure)) {
 		return false;
-	}
+	}*/
 	/* TODO: shouldn't we have bool? */
 	return is_same_type(type_space, condition_type, lookup_type(type_space, "int"));
 }
@@ -530,9 +528,9 @@ static bool type_check_if(
 ) {
 	type_t *if_type = NULL;
 	if (
-		!type_check_expression(type_space, if_statement->if_expr, closure, &if_type ) ||
+		!type_check_expression(type_space, if_statement->if_expr, closure, &if_type ) /* ||
 		!type_check_block(type_space, if_statement->if_block, closure) ||
-		!type_check_block(type_space, if_statement->else_block, closure)
+		!type_check_block(type_space, if_statement->else_block, closure) */
 	) {
 		return false;
 	}
@@ -569,7 +567,7 @@ static bool type_check_statement(
 	return true;
 }
 
-static bool type_check_block(type_space_t *type_space, code_block_t *code_block, closure_t *closure) {
+bool type_check_block(type_space_t *type_space, code_block_t *code_block, closure_t *closure) {
 	statement_t *current_statement = code_block->first_line;
 	while (current_statement != NULL) {
 		if (!type_check_statement(type_space, current_statement, closure)) {
@@ -578,11 +576,6 @@ static bool type_check_block(type_space_t *type_space, code_block_t *code_block,
 		current_statement = current_statement->next;
 	}
 	return true;
-}
-
-bool type_check(type_space_t *type_space, code_file_t *code_file, closure_t *closure) {
-	/* in the future, when we'll have more than one block in code_file, iterate through them and type-check them */
-	return type_check_block(type_space, code_file->first_block, closure);
 }
 
 static void print_type(type_t *type) {

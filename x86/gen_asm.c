@@ -469,7 +469,7 @@ bool generate_declaration(statement_t * statement, closure_t * closure) {
 	return true;
 }
 
-bool generate_ifelse(statement_ifelse_t * ifelse, closure_t * closure)
+bool generate_ifelse(statement_ifelse_t * ifelse, closure_t * closure, type_space_t *type_space)
 {
 	asm_node_t * check_evaluated_expression = NULL;
 	asm_node_t * jmp_over_if = NULL;
@@ -502,7 +502,7 @@ bool generate_ifelse(statement_ifelse_t * ifelse, closure_t * closure)
 	jmp_over_if->operand1.ref = NULL; /* this will be set later on */
 	add_instruction_to_closure(jmp_over_if, closure);
 
-	if (!parse_block(ifelse->if_block, closure))
+	if (!parse_block(ifelse->if_block, closure, type_space))
 	{
 		return false;
 	}
@@ -523,7 +523,7 @@ bool generate_ifelse(statement_ifelse_t * ifelse, closure_t * closure)
 		add_instruction_to_closure(jmp_over_else, closure);
 		
 		/* add the else block */
-		if (!parse_block(ifelse->else_block, closure))
+		if (!parse_block(ifelse->else_block, closure, type_space))
 		{
 			return false;
 		}
@@ -544,7 +544,7 @@ bool generate_ifelse(statement_ifelse_t * ifelse, closure_t * closure)
 	return true;
 }
 
-bool generate_loop(statement_loop_t * loop, closure_t * closure)
+bool generate_loop(statement_loop_t * loop, closure_t * closure, type_space_t *type_space)
 {
 	asm_node_t * check_evaluated_expression = NULL;
 	asm_node_t * jmp_over_loop = NULL;
@@ -604,7 +604,7 @@ bool generate_loop(statement_loop_t * loop, closure_t * closure)
 	}
 	
 	/* the body of the loop */
-	if (!parse_block(loop->loop_body, loop_closure))
+	if (!parse_block(loop->loop_body, loop_closure, type_space))
 	{
 		return false;
 	}
@@ -660,9 +660,13 @@ bool generate_break(closure_t * closure)
 	return true;
 }
 
-bool parse_block(code_block_t * code_block, closure_t * closure)
+bool parse_block(code_block_t * code_block, closure_t * closure, type_space_t *type_space)
 {
 	statement_t * current_statement = code_block->first_line;
+	if (!type_check_block(type_space, code_block, closure)) {
+		return false;
+	}
+
 	while (current_statement != NULL) {
 		switch (current_statement->statement_type) {
 			case STATEMENT_TYPE_DECLARATION:
@@ -678,13 +682,13 @@ bool parse_block(code_block_t * code_block, closure_t * closure)
 				break;
 
 			case STATEMENT_TYPE_IFELSE:
-				if (!generate_ifelse(&current_statement->ifelse, closure))
+				if (!generate_ifelse(&current_statement->ifelse, closure, type_space))
 				{
 					return false;
 				}
 				break;
 			case STATEMENT_TYPE_LOOP:
-				if (!generate_loop(&current_statement->loop, closure))
+				if (!generate_loop(&current_statement->loop, closure, type_space))
 				{
 					return false;
 				}
@@ -862,16 +866,30 @@ bool generate_assembly(closure_t * closure, int out_fd) {
 	return true;
 }
 
-bool gen_asm_x86(code_file_t * code_file, int out_fd, closure_t *file_closure)
+bool gen_asm_x86(code_file_t * code_file, int out_fd)
 {
+	type_space_t *type_space = create_empty_type_space();
+	closure_t file_closure = {
+			.next_closure = NULL,
+			.parent = NULL,
+			.instructions = NULL,
+			.variables = NULL,
+			.label_count = 1,
+			.closure_name = "global_closure",
+			.break_to_instruction = NULL
+	};
 	/* TODO: shouldn't closjure be per-block? */
 	code_block_t * code_block = code_file->first_block;
+	if (NULL == type_space) {
+		printf("Failed allocating type space");
+		return false;
+	}
 	while (code_block != NULL)
 	{
-		if(!parse_block(code_block, file_closure)) {
+		if(!parse_block(code_block, &file_closure, type_space)) {
 			printf("Failed parsing to intermediate RISC\nGenerating assembly anyway.\n");
 		}
 		code_block = NULL; // TODO add the other blocks
 	}
-	return generate_assembly(file_closure, out_fd);
+	return generate_assembly(&file_closure, out_fd);
 }
