@@ -124,6 +124,8 @@ function_declaration_t * function_declaration;
 file : function_declaration { register_new_function($1, function_list); }
 
 function_declaration : declaration_without_modifier '(' function_parameters ')' block { $$ = create_function_declaration($1, $3, $5); }
+		     | declaration_without_modifier '(' ')' block { $$ = create_function_declaration($1, NULL, $4); }
+		     ;
 
 function_parameters : function_parameters ',' declaration_without_modifier { $$ = add_function_parameter($1, $3); }
 		    | declaration_without_modifier { $$ = add_function_parameter(NULL, $1); }
