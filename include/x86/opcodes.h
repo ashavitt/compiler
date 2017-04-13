@@ -13,6 +13,7 @@ typedef enum opcode
     OPCODE_AND,
     OPCODE_OR,
     OPCODE_JMP,
+    OPCODE_CALL,
     OPCODE_PUSH,
     OPCODE_POP,
     OPCODE_JZ,

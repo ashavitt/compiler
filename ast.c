@@ -101,6 +101,17 @@ statement_t * create_statement_break()
 	return stmt;
 }
 
+statement_t * create_statement_call_function(statement_call_function_t * call_function)
+{
+	statement_t * stmt = create_statement(STATEMENT_TYPE_CALL_FUNCTION);
+	if (NULL == stmt)
+	{
+		return NULL;
+	}
+	stmt->call_function = *call_function;
+	return stmt;
+}
+
 void add_statement(
 	code_block_t * code_block,
 	statement_t * statement)
@@ -297,6 +308,9 @@ void debug_code_block(
 				break;
 			case STATEMENT_TYPE_BREAK:
 				printf("break\n");
+				break;
+			case STATEMENT_TYPE_CALL_FUNCTION:
+				printf("call function\n");
 				break;
 		}
 		statement = statement->next;
