@@ -85,7 +85,7 @@ field_t * type_declaration_struct_field_list;
 %type <code_block> block
 %type <statement_expression> expr
 %type <statement_expression> optional_expr
-%type <statement_declaration> declaration
+%type <statement_declaration> declaration_with_modifier
 %type <statement_type_declaration> type_declaration
 %type <statement_type_declaration> type_declaration_struct
 %type <statement_declaration> declaration_type
@@ -131,8 +131,8 @@ lines : statement { code_block_t * code_block = malloc(sizeof(code_block_t));
 
 statement : expr ';' { $$ = create_statement_expression($1); }
 	  | type_declaration ';' { $$ = create_statement_type_declaration($1); }
-	  | declaration ';' { $$ = create_statement_declaration($1, NULL); }
-	  | declaration '=' expr ';' { $$ = create_statement_declaration($1, $3); }
+	  | declaration_with_modifier ';' { $$ = create_statement_declaration($1, NULL); }
+	  | declaration_with_modifier '=' expr ';' { $$ = create_statement_declaration($1, $3); }
 	  | ifelse { $$ = create_statement_ifelse($1); }
 	  | loop { $$ = create_statement_loop($1); }
 	  | TOK_BREAK ';' { $$ = create_statement_break(); }
@@ -182,9 +182,9 @@ expr : TOK_NUMBER { $$ = create_const_expression($1); }
      ;
 
 /* TODO add modifier after declaration for pointer consts */
-declaration : declaration_modifier declaration { $$ = declaration_add_modifier($2, $1); }
-	    | declaration_without_modifier { $$ = $1; }
-	    ;
+declaration_with_modifier : declaration_modifier declaration_with_modifier { $$ = declaration_add_modifier($2, $1); }
+			  | declaration_without_modifier { $$ = $1; }
+			  ;
 
 declaration_without_modifier : declaration_type declaration_indirections TOK_IDENTIFIER { declaration_add_indirections_identifier($1, $2, $3); }
 
@@ -198,8 +198,8 @@ type_declaration : declaration_modifier type_declaration { $$ = type_declaration
 
 type_declaration_struct : TOK_STRUCT TOK_IDENTIFIER '{' type_declaration_struct_field_list '}' { $$ = create_type_declaration_struct($2, $4); }
 
-type_declaration_struct_field_list : type_declaration_struct_field_list declaration ';' { $$ = declaration_create_field($2, $1); }
-				   | declaration ';' { $$ = declaration_create_field($1, NULL); }
+type_declaration_struct_field_list : type_declaration_struct_field_list declaration_with_modifier ';' { $$ = declaration_create_field($2, $1); }
+				   | declaration_with_modifier ';' { $$ = declaration_create_field($1, NULL); }
 				   ;
 
 declaration_type_primitive : TOK_CHAR { $$ = "char"; }
