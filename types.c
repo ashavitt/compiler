@@ -256,41 +256,11 @@ type_t * get_declaration_type(
 		return NULL;
 	}
 
-	new_type->modifier = (declaration_type_modifier_t){
-			.is_unsigned = false,
-			.is_const = false,
-			.is_register = false,
-			.is_volatile = false
-	};
+	new_type->modifier = declaration->type.modifier;
+	new_type->deref_count = declaration->type.deref_count;
 	new_type->type = declaration->type.type_base;
 	new_type->base_type = NULL;
 	new_type->deref_count = 0;
-	new_type->size = calculate_size(type_space, &declaration->type);
-
-	statement_type_declaration_t real_declaration_type = {
-		.type_name = declaration->type.type_base_type.identifier,
-		.type = declaration->type
-	};
-	statement_type_declaration_t *current_base_type = &real_declaration_type;
-	do {
-		/* TODO: handle duplicate modifier */
-		new_type->modifier.is_volatile &= current_base_type->type.modifier.is_volatile;
-		new_type->modifier.is_register &= current_base_type->type.modifier.is_register;
-		new_type->modifier.is_const &= current_base_type->type.modifier.is_const;
-		new_type->modifier.is_unsigned &= current_base_type->type.modifier.is_unsigned;
-		new_type->deref_count += current_base_type->type.deref_count;
-		if (current_base_type->type.type_base == DECLARATION_TYPE_BASE_CUSTOM_TYPE) {
-			current_base_type = current_base_type->type.type_base_type.typedef_type;
-		}
-	} while (current_base_type->type.type_base == DECLARATION_TYPE_BASE_CUSTOM_TYPE);
-
-	/* now we have all the modifiers and stuff, we reached the base type */
-	new_type->base_type = lookup_type(type_space, current_base_type->type_name);
-	if (new_type->base_type == NULL) {
-		/* we are yet to support forward declaration or types that do not exist, FTFY */
-		free(new_type);
-		return false;
-	}
 
 	/* If we have no modifiers, just return the actual type */
 	if (!new_type->modifier.is_volatile &&
@@ -300,6 +270,32 @@ type_t * get_declaration_type(
 		new_type->deref_count == 0
 	) {
 		return lookup_type(type_space, declaration->type.type_base_type.identifier);
+	}
+
+	/* now we have all the modifiers and stuff, we reached the base type */
+	new_type->base_type = lookup_type(type_space, declaration->type.type_base_type.identifier);
+	if (new_type->base_type == NULL) {
+		/* we are yet to support forward declaration or types that do not exist, FTFY */
+		free(new_type);
+		return false;
+	}
+
+	/* apply base type modifiers, assuming that if type exists in type-space it is already looked up,
+	 * it cant be typedef , the lookup is done in "add_type"
+	 */
+	new_type->modifier.is_register |= new_type->base_type->modifier.is_register;
+	new_type->modifier.is_const |= new_type->base_type->modifier.is_const;
+	new_type->modifier.is_unsigned |= new_type->base_type->modifier.is_unsigned;
+	new_type->modifier.is_volatile |= new_type->base_type->modifier.is_volatile;
+	new_type->deref_count += new_type->base_type->deref_count;
+	/* in case we got typedef we need to update the base type */
+	if (new_type->base_type->base_type != NULL) {
+		new_type->base_type = new_type->base_type->base_type;
+	}
+	if (new_type->deref_count > 0) {
+		new_type->size = 4;
+	} else {
+		new_type->size = new_type->base_type->size;
 	}
 
 	return new_type;
