@@ -18,7 +18,18 @@ typedef enum opcode
     OPCODE_JZ,
     OPCODE_JNZ,
     OPCODE_NOP,
-	OPCODE_NEG
+    OPCODE_NEG,
+    OPCODE_SETA,
+    OPCODE_SETAE,
+    OPCODE_SETB,
+    OPCODE_SETBE,
+    OPCODE_SETC,
+    OPCODE_SETE,
+    OPCODE_SETNE,
+    OPCODE_SETG,
+    OPCODE_SETGE,
+    OPCODE_SETL,
+    OPCODE_SETLE
 } opcode_e;
 
 typedef enum
