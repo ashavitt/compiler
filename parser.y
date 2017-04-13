@@ -63,7 +63,7 @@ statement_declaration_t * statement_declaration;
 statement_ifelse_t * statement_ifelse;
 statement_loop_t * statement_loop;
 statement_type_declaration_t * statement_type_declaration;
-char * declaration_type;
+char * declaration_type_primitive;
 declaration_type_modifier_t declaration_modifier;
 unsigned long declaration_indirections;
 field_t * type_declaration_struct_field_list;
@@ -88,13 +88,13 @@ field_t * type_declaration_struct_field_list;
 %type <statement_declaration> declaration
 %type <statement_type_declaration> type_declaration
 %type <statement_type_declaration> type_declaration_struct
-%type <statement_declaration> declaration_primitive
-%type <statement_declaration> declaration_struct
+%type <statement_declaration> declaration_type
+%type <statement_declaration> declaration_without_modifier
 %type <statement_ifelse> ifelse
 %type <statement_loop> loop
 %type <statement_loop> for_loop
 %type <statement_loop> while_loop
-%type <declaration_type> declaration_type
+%type <declaration_type_primitive> declaration_type_primitive
 %type <declaration_modifier> declaration_modifier
 %type <declaration_indirections> declaration_indirections
 %type <type_declaration_struct_field_list> type_declaration_struct_field_list
@@ -155,8 +155,7 @@ optional_expr : expr { $$ = $1; }
 	      ;
 
 expr : TOK_NUMBER { $$ = create_const_expression($1); }
-     | TOK_IDENTIFIER { lookup_symbol($1);
-		        $$ = create_identifier_expression($1); }
+     | TOK_IDENTIFIER { $$ = create_identifier_expression($1); }
      | expr '=' expr { $$ = create_op_expression(OP_ASSIGN, $1, $3, NULL); }
      | expr '?' expr ':' expr { $$ = create_op_expression(OP_TERNARY, $1, $3, $5); }
      | expr TOK_OP_OR expr { $$ = create_op_expression(OP_OR, $1, $3, NULL); }
@@ -182,30 +181,31 @@ expr : TOK_NUMBER { $$ = create_const_expression($1); }
      | '(' expr ')' { $$ = $2; }
      ;
 
+/* TODO add modifier after declaration for pointer consts */
 declaration : declaration_modifier declaration { $$ = declaration_add_modifier($2, $1); }
-	    | declaration_primitive { $$ = $1; }
-	    | declaration_struct { $$ = $1; }
+	    | declaration_without_modifier { $$ = $1; }
 	    ;
+
+declaration_without_modifier : declaration_type declaration_indirections TOK_IDENTIFIER { declaration_add_indirections_identifier($1, $2, $3); }
+
+declaration_type : declaration_type_primitive { $$ = create_declaration_primitive($1); }
+		 | TOK_STRUCT TOK_IDENTIFIER { $$ = create_declaration_struct($2); }
+		 ;
 
 type_declaration : declaration_modifier type_declaration { $$ = type_declaration_add_modifier($2, $1); }
 		 | type_declaration_struct { $$ = $1; }
 		 ;
 
-declaration_primitive : declaration_type declaration_indirections TOK_IDENTIFIER { install_symbol($3);
-	    				$$ = create_declaration_primitive($1, $2, $3); }
-
-declaration_struct : TOK_STRUCT TOK_IDENTIFIER declaration_indirections TOK_IDENTIFIER { $$ = create_declaration_struct($2, $3, $4); }
-
 type_declaration_struct : TOK_STRUCT TOK_IDENTIFIER '{' type_declaration_struct_field_list '}' { $$ = create_type_declaration_struct($2, $4); }
 
 type_declaration_struct_field_list : type_declaration_struct_field_list declaration ';' { $$ = declaration_create_field($2, $1); }
-			      | declaration ';' { $$ = declaration_create_field($1, NULL); }
-			      ;
+				   | declaration ';' { $$ = declaration_create_field($1, NULL); }
+				   ;
 
-declaration_type : TOK_CHAR { $$ = "char"; }
-		 | TOK_INT { $$ = "int"; }
-		 | TOK_LONG { $$ = "long"; }
-		 ;
+declaration_type_primitive : TOK_CHAR { $$ = "char"; }
+			   | TOK_INT { $$ = "int"; }
+			   | TOK_LONG { $$ = "long"; }
+			   ;
 
 declaration_indirections : declaration_indirections '*' { $$ = $1 + 1; }
 			 | { $$ = 0; }

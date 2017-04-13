@@ -131,16 +131,18 @@ struct statement_type_declaration {
     declaration_type_t type;
 };
 
-statement_declaration_t * create_declaration_primitive(
-	char * type_identifier,
+statement_declaration_t * declaration_add_indirections_identifier(
+	statement_declaration_t * declaration,
 	unsigned long indirections_count,
 	const char * identifier
 );
 
+statement_declaration_t * create_declaration_primitive(
+	char * type_identifier
+);
+
 statement_declaration_t * create_declaration_struct(
-	char * struct_identifier,
-	unsigned long indirections_count,
-	const char * identifier
+	char * struct_identifier
 );
 
 statement_type_declaration_t * create_type_declaration_struct(

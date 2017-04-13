@@ -140,16 +140,15 @@ cleanup:
     return NULL;
 }
 
-statement_declaration_t * create_declaration(
+statement_declaration_t * declaration_add_indirections_identifier(
+	statement_declaration_t * declaration,
 	unsigned long indirections_count,
 	const char * identifier
 ) {
-	statement_declaration_t * new_decl = NULL;
 	char * identifier_copy = NULL;
 	size_t identifier_len = 0;
 
-	new_decl = (statement_declaration_t *) malloc (sizeof(statement_declaration_t));
-	if (NULL == new_decl)
+	if (NULL == declaration)
 	{
 		goto cleanup;
 	}
@@ -163,21 +162,21 @@ statement_declaration_t * create_declaration(
 
 	strncpy(identifier_copy, identifier, identifier_len);
 
-	new_decl->identifier = identifier_copy;
+	declaration->identifier = identifier_copy;
 
-	new_decl->type.deref_count = indirections_count;
-	new_decl->type.modifier = (declaration_type_modifier_t) {
+	declaration->type.deref_count = indirections_count;
+	declaration->type.modifier = (declaration_type_modifier_t) {
 		.is_const = false,
 		.is_volatile = false,
 		.is_unsigned = false,
 		.is_register = false
 	};
 
-	return new_decl;
+	return declaration;
 cleanup:
-	if (NULL != new_decl)
+	if (NULL != declaration)
 	{
-		free(new_decl);
+		free(declaration);
 	}
 	if (NULL != identifier_copy)
 	{
@@ -187,13 +186,11 @@ cleanup:
 }
 
 statement_declaration_t * create_declaration_primitive(
-	char * type_identifier,
-	unsigned long indirections_count,
-	const char * identifier)
+	char * type_identifier)
 {
 	statement_declaration_t * new_decl = NULL;
 
-	new_decl = create_declaration(indirections_count, identifier);
+	new_decl = malloc(sizeof(*new_decl));
 	if (NULL == new_decl)
 	{
 		return NULL;
@@ -208,13 +205,11 @@ statement_declaration_t * create_declaration_primitive(
 }
 
 statement_declaration_t * create_declaration_struct(
-	char * struct_identifier,
-	unsigned long indirections_count,
-	const char * identifier)
+	char * struct_identifier)
 {
 	statement_declaration_t * new_decl = NULL;
 
-	new_decl = create_declaration(indirections_count, identifier);
+	new_decl = malloc(sizeof(*new_decl));
 	if (NULL == new_decl)
 	{
 		return NULL;
