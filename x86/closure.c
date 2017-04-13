@@ -46,8 +46,12 @@ variable_t * get_variable(closure_t * closure, char * identifier)
 	return NULL;
 }
 
-variable_t * allocate_variable(closure_t * closure, size_t size, char * identifier, value_type_e type)
-{
+variable_t * allocate_variable(
+	closure_t * closure,
+	char * identifier,
+	value_type_e type,
+	type_t *variable_type
+) {
 	closure_t * current_closure = closure;
 	variable_t * new_variable = malloc(sizeof(*new_variable));
 	if (NULL == new_variable) {
@@ -87,7 +91,8 @@ variable_t * allocate_variable(closure_t * closure, size_t size, char * identifi
 	}
 
 	new_variable->variable_name = identifier;
-	new_variable->size = size;
+	new_variable->size = variable_type->size;
+	new_variable->type = variable_type;
 	closure->variables = new_variable;
 
 	return new_variable;

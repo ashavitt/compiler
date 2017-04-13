@@ -88,9 +88,9 @@ struct asm_node
 
 variable_t * allocate_variable(
 	closure_t * closure,
-	size_t size,
 	char * identifier,
-	value_type_e type
+	value_type_e type,
+	type_t *variable_type
 );
 
 void add_instruction_to_closure(

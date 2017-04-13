@@ -394,7 +394,7 @@ static bool is_lvalue(
 		   expression->type == EXPRESSION_TYPE_OP && expression->exp_op.op = OP_DEREF */;
 }
 
-static bool type_check_expression(
+bool type_check_expression(
 	type_space_t *type_space,
 	statement_expression_t *expression,
 	closure_t *closure,
@@ -476,6 +476,9 @@ static bool type_check_expression(
 				   (exp1_type->type == DECLARATION_TYPE_BASE_PRIMITIVE ||
 				   exp1_type->deref_count > 0);
 		case OP_ASSIGN:
+			if (NULL != expression_type) {
+				*expression_type = exp1_type;
+			}
 			/* we don't support conversion yet */
 			return is_same_type(type_space, exp1_type, exp2_type) &&
 				   is_lvalue(type_space, expression->exp_op.exp1);
@@ -503,15 +506,13 @@ static bool type_check_declaration(
 	/* we add variables as we type-check*/
 	added_variable = allocate_variable(
 		closure,
-		declaration_type->size,
 		declaration->identifier,
-		VALUE_TYPE_VARIABLE
+		VALUE_TYPE_VARIABLE,
+		declaration_type
 	);
 	if (NULL == added_variable) {
 		return false;
 	}
-	/* TODO: remove this access */
-	added_variable->type = declaration_type;
 	return true;
 }
 

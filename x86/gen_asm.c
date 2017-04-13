@@ -3,6 +3,7 @@
 #include <unistd.h>
 #include <stdio.h>
 #include <x86/closure.h>
+#include <types.h>
 
 static bool generate_expression(statement_expression_t * expression, closure_t * closure, type_space_t *type_space);
 
@@ -89,13 +90,23 @@ bool load_expression_to_register(
 	}
 }
 
-variable_t * allocate_variable_from_destination(statement_expression_t * dst_expression, closure_t * closure) {
+static variable_t * allocate_variable_from_destination(
+	statement_expression_t * dst_expression,
+	closure_t * closure,
+	type_space_t * type_space
+) {
+	type_t *expression_type = NULL;
 	if (dst_expression->type == EXPRESSION_TYPE_IDENTIFIER) {
 		return get_variable(closure, dst_expression->identifier);
 	}
 
 	/* TODO: recursively check for type of expression */
-	return allocate_variable(closure, 4, "", VALUE_TYPE_EXPRESSION_RESULT);
+	/* TODO: reconsider this */
+	if (!type_check_expression(type_space, dst_expression, closure, &expression_type)) {
+		return NULL;
+	}
+
+	return allocate_variable(closure, "", VALUE_TYPE_EXPRESSION_RESULT, expression_type);
 }
 
 bool generate_assignment(statement_expression_t * expression, closure_t * closure, type_space_t *type_space) {
@@ -184,7 +195,7 @@ bool generate_arithmetic_operator(
 	node_op->operand2.reg = REGISTER_EBX;
 	node_op->opcode = opcode;
 
-	result = allocate_variable_from_destination(arithmetic_expression->exp1, closure);
+	result = allocate_variable_from_destination(arithmetic_expression->exp1, closure, type_space);
 	if (NULL == result) {
 		success = false;
 		goto cleanup;
@@ -217,6 +228,7 @@ bool generate_unary_operator(
 ) {
     bool success = false;
     asm_node_t * opcode_asm = malloc(sizeof(*opcode_asm));
+	type_t *expression_type = NULL;
 
     if (NULL == opcode_asm) {
         goto cleanup;
@@ -231,8 +243,10 @@ bool generate_unary_operator(
         goto cleanup;
     }
 
-    /* TODO: fix when there are types */
-    variable_t * result =  allocate_variable(closure, 4, "", VALUE_TYPE_EXPRESSION_RESULT);
+	if (!type_check_expression(type_space, expression->exp_op.exp1, closure, &expression_type)){
+		goto cleanup;
+	}
+    variable_t * result =  allocate_variable(closure, "", VALUE_TYPE_EXPRESSION_RESULT, expression_type);
 
     opcode_asm->opcode = opcode;
     opcode_asm->operand1.type = OPERAND_TYPE_REG;
@@ -259,7 +273,8 @@ bool generate_multiplication(statement_expression_t * expression, closure_t * cl
 	asm_node_t * mul_asm = NULL;
 	variable_t * result = NULL;
 
-	result = allocate_variable(closure, 4, "", VALUE_TYPE_EXPRESSION_RESULT);
+	/* TODO: fix when there are conversions */
+	result = allocate_variable_from_destination(expression->exp_op.exp1, closure, type_space);
 	if (NULL == result) {
 		return false;
 	}
@@ -389,6 +404,9 @@ bool generate_comparison_operator(
 				set_result_opcode = OPCODE_SETAE;
 			}
 			break;
+		default:
+			/* unhandled */
+			goto cleanup;
 	}
 
 	set_result_op->operand1.type = OPERAND_TYPE_REG;
@@ -397,7 +415,12 @@ bool generate_comparison_operator(
 
 	add_instruction_to_closure(set_result_op, closure);
 
-	result = allocate_variable_from_destination(comparison_expression->exp1, closure);
+	type_t * int_type = lookup_type(type_space, "int");
+	if (NULL == int_type) {
+		/* internal error */
+		goto cleanup;
+	}
+	result = allocate_variable(closure, "", VALUE_TYPE_EXPRESSION_RESULT, int_type);
 	if (NULL == result) {
 		success = false;
 		goto cleanup;
@@ -894,6 +917,9 @@ bool generate_assembly(closure_t * closure, int out_fd) {
 bool gen_asm_x86(function_node_t * function_list, int out_fd)
 {
 	function_node_t * current_function = function_list;
+	function_parameter_t *current_parameter = NULL;
+	type_t *current_parameter_type = NULL;
+
 	while (current_function != NULL)
 	{
 		type_space_t * type_space = create_empty_type_space(NULL);
@@ -906,6 +932,30 @@ bool gen_asm_x86(function_node_t * function_list, int out_fd)
 				.closure_name = current_function->function->identifier,
 				.break_to_instruction = NULL
 		};
+
+		/* add parameters to the function closure */
+		current_parameter = current_function->function->parameter_list;
+		while (current_parameter != NULL) {
+			statement_declaration_t parameter_declaration = {
+				.type = current_parameter->parameter_type,
+				.identifier = current_parameter->parameter_identifier
+			};
+			current_parameter_type = get_declaration_type(type_space, &parameter_declaration);
+			if (NULL == current_parameter) {
+				/* unrecognized parameter type */
+				return false;
+			}
+			if (!allocate_variable(
+				&function_closure,
+				current_parameter->parameter_identifier,
+				VALUE_TYPE_VARIABLE,
+				current_parameter_type
+			)) {
+				return false;
+			}
+			current_parameter = current_parameter->next;
+		}
+
 		/* TODO: shouldn't closure be per-block? */
 		code_block_t * code_block = current_function->function->function_code;
 		if (NULL == type_space) {
