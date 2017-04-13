@@ -134,7 +134,7 @@ function_declaration : declaration_without_modifier '(' function_parameters ')' 
 		     | declaration_without_modifier '(' ')' block { $$ = create_function_declaration($1, NULL, $4); }
 		     ;
 
-function_parameters : function_parameters ',' declaration_without_modifier { $$ = add_function_parameter($1, $3); }
+function_parameters : declaration_without_modifier ',' function_parameters { $$ = add_function_parameter($3, $1); }
 		    | declaration_without_modifier { $$ = add_function_parameter(NULL, $1); }
 		    ;
 
@@ -164,7 +164,7 @@ function_call : TOK_IDENTIFIER '(' ')' { $$ = create_call_function_statement($1,
 	      | TOK_IDENTIFIER '(' function_call_params ')' { $$ = create_call_function_statement($1, $3); }
 	      ;
 
-function_call_params : function_call_params ',' expr { $$ = add_call_function_parameter($1, $3); }
+function_call_params : expr ',' function_call_params { $$ = add_call_function_parameter($3, $1); }
 		     | expr { $$ = add_call_function_parameter(NULL, $1); }
 		     ;
 
