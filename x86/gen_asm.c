@@ -894,7 +894,7 @@ bool generate_assembly(closure_t * closure, int out_fd) {
 bool gen_asm_x86(function_node_t * function_list, int out_fd)
 {
 	function_node_t * current_function = function_list;
-	while (function_list != NULL)
+	while (current_function != NULL)
 	{
 		type_space_t * type_space = create_empty_type_space(NULL);
 		closure_t function_closure = {
@@ -921,6 +921,7 @@ bool gen_asm_x86(function_node_t * function_list, int out_fd)
 		{
 			return false;
 		}
+		current_function = current_function->next;
 	}
 	return true;
 }

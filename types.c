@@ -351,9 +351,15 @@ type_space_t *create_empty_type_space(type_space_t *parent) {
 		return NULL;
 	}
 
+	empty_space->normal_space = NULL;
 	empty_space->struct_space = NULL;
 	empty_space->enum_space = NULL;
 	empty_space->union_space = NULL;
+	empty_space->parent = parent;
+
+	if (empty_space->parent != NULL) {
+		return empty_space;
+	}
 
 	/* TODO: free recursively */
 	/* initialize primitives */
@@ -376,8 +382,6 @@ type_space_t *create_empty_type_space(type_space_t *parent) {
 	if (!add_primitive(empty_space, "long", 8)) {
 		return NULL;
 	}
-
-	empty_space->parent = parent;
 
 	return empty_space;
 }
