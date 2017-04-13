@@ -243,6 +243,7 @@ int main(int argc, char * argv[])
 	debug_ast(&code_file);
 	if (!type_check(type_space, &code_file)) {
         printf("Type check did not pass!\n");
+        return 0;
     }
     debug_types(type_space);
     /* TODO: pass typespace to generate assembly */

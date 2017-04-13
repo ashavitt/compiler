@@ -53,6 +53,14 @@ variable_t * allocate_variable(closure_t * closure, size_t size, char * identifi
 	new_variable->next = closure->variables;
     new_variable->variable_type = type;
 
+	/* named variable, check for name collision first */
+	if ((strcmp(identifier, "") != 0) &&
+		(NULL != get_variable(closure, identifier))
+	) {
+		free(new_variable);
+		return NULL;
+	}
+
 	/* check the previous closures */
 	while (current_closure != NULL)
 	{
