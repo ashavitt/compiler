@@ -702,6 +702,11 @@ bool generate_break(closure_t * closure, type_space_t *type_space)
 	return true;
 }
 
+bool generate_call_function(statement_call_function_t * call_function, closure_t * closure, type_space_t * type_space)
+{
+	return false;
+}
+
 bool parse_block(code_block_t * code_block, closure_t * closure, type_space_t *type_space)
 {
 	statement_t * current_statement = code_block->first_line;
@@ -743,6 +748,12 @@ bool parse_block(code_block_t * code_block, closure_t * closure, type_space_t *t
 				break;
 			case STATEMENT_TYPE_BREAK:
 				if (!generate_break(closure, new_block_space))
+				{
+					return false;
+				}
+				break;
+			case STATEMENT_TYPE_CALL_FUNCTION:
+				if (!generate_call_function(&current_statement->call_function, closure, new_block_space))
 				{
 					return false;
 				}
