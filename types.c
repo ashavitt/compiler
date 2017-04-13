@@ -130,8 +130,8 @@ static unsigned long calculate_size(type_space_t *type_space, declaration_type_t
 }
 
 bool add_type(
-		type_space_t *type_space,
-		statement_type_declaration_t *declaration
+	type_space_t *type_space,
+	statement_type_declaration_t *declaration
 ) {
 	type_t *new_type = malloc(sizeof(*new_type));
 	type_t **space_to_insert_to = NULL;
