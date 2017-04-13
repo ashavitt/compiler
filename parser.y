@@ -183,12 +183,12 @@ expr : TOK_NUMBER { $$ = create_const_expression($1); }
      ;
 
 declaration : declaration_modifier declaration { $$ = declaration_add_modifier($2, $1); }
-	    | declaration_primitive { $$ = $1; };
-	    | declaration_struct { $$ = $1; };
+	    | declaration_primitive { $$ = $1; }
+	    | declaration_struct { $$ = $1; }
 	    ;
 
 type_declaration : declaration_modifier type_declaration { $$ = type_declaration_add_modifier($2, $1); }
-		 | type_declaration_struct { $$ = $1; };
+		 | type_declaration_struct { $$ = $1; }
 		 ;
 
 declaration_primitive : declaration_type declaration_indirections TOK_IDENTIFIER { install_symbol($3);
