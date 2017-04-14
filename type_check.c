@@ -113,7 +113,6 @@ static bool type_check_declaration(
 	type_t *declaration_type = NULL;
 	variable_t *added_variable = NULL;
 
-	/* TODO: REMOVE THIS SHITTY HACK NIGGA, and redesign this shitty module */
 	declaration_type = get_declaration_type(type_space, declaration);
 	if (NULL == declaration_type) {
 		return false;
