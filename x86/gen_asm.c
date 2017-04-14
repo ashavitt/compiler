@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <x86/closure.h>
 #include <types.h>
+#include <type_check.h>
 
 static bool generate_expression(statement_expression_t * expression, closure_t * closure, type_space_t *type_space);
 
@@ -599,7 +600,7 @@ bool generate_loop(statement_loop_t * loop, closure_t * closure, type_space_t *t
 	end_of_loop->opcode = OPCODE_NOP;
 
 	/* enter the loop's closure */
-	loop_closure = enter_new_closure(closure);
+	loop_closure = enter_new_closure(closure, NULL);
 	/* set the end of the loop for breaks */
 	loop_closure->break_to_instruction = end_of_loop;
 
@@ -935,17 +936,7 @@ bool gen_asm_x86(function_node_t * function_list, int out_fd)
 	while (current_function != NULL)
 	{
 		type_space_t * type_space = create_empty_type_space(NULL);
-		/* TODO: the fuck this is here, we should not initialize by hand */
-		closure_t function_closure = {
-			.next_closure = NULL,
-			.parent = NULL,
-			.instructions = NULL,
-			.variables = NULL,
-			.label_count = 1,
-			.closure_name = current_function->function->identifier,
-			.break_to_instruction = NULL,
-			.parameters = NULL
-		};
+		closure_t *function_closure = enter_new_closure(NULL, current_function->function->identifier);
 
 		/* add parameters to the function closure */
 		current_parameter = current_function->function->parameter_list;
@@ -960,7 +951,7 @@ bool gen_asm_x86(function_node_t * function_list, int out_fd)
 				return false;
 			}
 			if (!allocate_variable(
-				&function_closure,
+				function_closure,
 				current_parameter->parameter_identifier,
 				VALUE_TYPE_PARAMETER,
 				current_parameter_type
@@ -977,11 +968,11 @@ bool gen_asm_x86(function_node_t * function_list, int out_fd)
 			return false;
 		}
 
-		if (!parse_block(code_block, &function_closure, type_space)) {
+		if (!parse_block(code_block, function_closure, type_space)) {
 			printf("Failed parsing to intermediate RISC\nGenerating assembly anyway.\n");
 		}
 
-		if (!generate_assembly(&function_closure, out_fd))
+		if (!generate_assembly(function_closure, out_fd))
 		{
 			return false;
 		}

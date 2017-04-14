@@ -208,25 +208,37 @@ void add_label_to_node(
 }
 
 closure_t * enter_new_closure(
-	closure_t * old_closure
+	closure_t * old_closure,
+	const char * new_closure_name
 ) {
 	closure_t * new_closure = malloc(sizeof(*new_closure));
 
 	new_closure->parent = old_closure;
 	new_closure->instructions = NULL;
 	new_closure->variables = NULL;
-	new_closure->label_count = old_closure->label_count;
-	new_closure->closure_name = old_closure->closure_name;
-	new_closure->break_to_instruction = old_closure->break_to_instruction;
+	new_closure->parameters = NULL;
+	if (old_closure != NULL) {
+		new_closure->label_count = old_closure->label_count;
+		if (new_closure_name == NULL) {
+			new_closure->closure_name = old_closure->closure_name;
+		}
+		new_closure->break_to_instruction = old_closure->break_to_instruction;
+	} else {
+		new_closure->label_count = 1;
+		new_closure->break_to_instruction = NULL;
+	}
+
+	if (new_closure_name != NULL) {
+		new_closure->closure_name = new_closure_name;
+	}
 
 	return new_closure;
 }
 
 closure_t * exit_closure(
-	closure_t * old_closure)
-{
+	closure_t * old_closure
+) {
 	closure_t * new_closure = old_closure->parent;
-	asm_node_t * last_instruction = NULL;
 
 	/* concatenate instructions */
 	add_instruction_to_closure(old_closure->instructions, new_closure);

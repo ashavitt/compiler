@@ -71,7 +71,7 @@ typedef struct closure {
     variable_t * variables;
 	variable_t * parameters;
     unsigned long label_count;
-    char * closure_name;
+    const char * closure_name;
     asm_node_t * break_to_instruction;
 } closure_t;
 
@@ -116,7 +116,8 @@ void add_label_to_node(
 );
 
 closure_t * enter_new_closure(
-	closure_t * old_closure
+	closure_t * old_closure,
+	const char * new_closure_name
 );
 
 closure_t * exit_closure(
