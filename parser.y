@@ -250,6 +250,8 @@ declaration_modifier : TOK_SIGNED { $$ = (declaration_type_modifier_t) {}; }
 
 %%
 
+extern int yylineno;
+
 int main(int argc, char * argv[])
 {
 	extern FILE * yyin;
@@ -282,5 +284,5 @@ int main(int argc, char * argv[])
 
 void yyerror(function_node_t * function_list, const char * s)
 {
-	printf("%s\n", s);
+	printf("%s on line %d\n", s, yylineno);
 }

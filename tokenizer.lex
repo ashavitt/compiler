@@ -1,3 +1,5 @@
+%option yylineno
+
 %{
 #include <y.tab.h> /* tokens' file */
 #include <string.h>
@@ -29,8 +31,8 @@ typedef			{return TOK_TYPEDEF;}
 {NUMBER}		{
 	yylval.long_value = strtol(yytext, NULL, 0);
 	return TOK_NUMBER;}
-[ \t\r\n]+	
-
+[ \t\r]+
+\n {yylineno++;}
 ==			{ return TOK_EQUAL; }
 !=			{ return TOK_NEQUAL; }
 \|\|			{ return TOK_OP_OR; }

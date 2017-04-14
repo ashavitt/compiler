@@ -263,9 +263,6 @@ type_t *get_declaration_type(
 		type_space_t *type_space,
 		statement_declaration_t *declaration
 ) {
-	/* we can just treat declaration as typedef
-	 * TODO: that's really the same, we should incorparate it into our design */
-
 	type_t *new_type = malloc(sizeof(*new_type));
 	if (NULL == new_type) {
 		return NULL;

@@ -201,12 +201,12 @@ bool generate_arithmetic_operator(
 		goto cleanup;
 	}
 
+	add_instruction_to_closure(node_op, closure);
     if (!store_register_to_variable(result, REGISTER_EAX, closure)) {
         success = false;
         goto cleanup;
     }
 
-	add_instruction_to_closure(node_op, closure);
 	result->evaluated_expression = expression;
 
 	success = true;
