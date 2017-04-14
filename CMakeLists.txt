@@ -13,6 +13,7 @@ set(SOURCE_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/ast_nodes.c
     ${CMAKE_CURRENT_SOURCE_DIR}/symbol_table.c
     ${CMAKE_CURRENT_SOURCE_DIR}/types.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/type_check.c
     ${CMAKE_CURRENT_SOURCE_DIR}/x86/gen_asm.c
     ${CMAKE_CURRENT_SOURCE_DIR}/x86/closure.c
     ${CMAKE_CURRENT_SOURCE_DIR}/functions.c
