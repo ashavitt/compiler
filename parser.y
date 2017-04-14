@@ -271,7 +271,6 @@ int main(int argc, char * argv[])
 	}
 
 	debug_ast(function_list.next);
-	/* TODO: pass typespace to generate assembly */
 	printf("ASSEMBLY:\n");
 	if(!gen_asm_x86(function_list.next, 1)) {
 		printf("\nFailed generating assembly!\n");
