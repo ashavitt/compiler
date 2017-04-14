@@ -1,23 +1,30 @@
 #ifndef __AST_NODES_H__
 #define __AST_NODES_H__
 
-#include <stdbool.h>
-
 /* Structs and functions regarding the operations in C without flow control */
 
 typedef struct expression_op expression_op_t;
 typedef struct statement_expression statement_expression_t;
 typedef struct statement_declaration statement_declaration_t;
 typedef struct statement_type_declaration statement_type_declaration_t;
+typedef enum expression_type expression_type_e;
+typedef enum operator_type operator_type_e;
+typedef enum declaration_type_base_e declaration_type_base_t;
+typedef struct declaration_type_s declaration_type_t;
+typedef struct declaration_type_modifier_s declaration_type_modifier_t;
+typedef struct declaration_type_base_type_s declaration_type_base_type_t;
+typedef struct field_s field_t;
 
-typedef enum expression_type
+#include <stdbool.h>
+
+enum expression_type
 {
 	EXPRESSION_TYPE_OP,
 	EXPRESSION_TYPE_CONST,
 	EXPRESSION_TYPE_IDENTIFIER
-} expression_type_e;
+};
 
-typedef enum operator_type
+enum operator_type
 {
 	OP_ADD,
 	OP_SUB,
@@ -41,7 +48,15 @@ typedef enum operator_type
 	OP_LESS_EQUAL,
 	OP_GREATER_EQUAL,
 	OP_TERNARY
-} operator_type_e;
+};
+
+enum declaration_type_base_e {
+	DECLARATION_TYPE_BASE_PRIMITIVE,
+	DECLARATION_TYPE_BASE_STRUCT,
+	DECLARATION_TYPE_BASE_ENUM,
+	DECLARATION_TYPE_BASE_UNION,
+	DECLARATION_TYPE_BASE_CUSTOM_TYPE
+};
 
 struct expression_op
 {
@@ -53,13 +68,14 @@ struct expression_op
 
 struct statement_expression
 {
-	expression_type_e type;
+	expression_type_e expression_type;
 	union
 	{
 		expression_op_t exp_op;
 		long constant;
 		char * identifier;
 	};
+	struct type_s * type;
 };
 
 statement_expression_t * create_op_expression(
@@ -77,36 +93,26 @@ statement_expression_t * create_identifier_expression(
 	const char * identifier
 );
 
-typedef enum declaration_type_base_e {
-    DECLARATION_TYPE_BASE_PRIMITIVE,
-    DECLARATION_TYPE_BASE_STRUCT,
-    DECLARATION_TYPE_BASE_ENUM,
-    DECLARATION_TYPE_BASE_UNION,
-    DECLARATION_TYPE_BASE_CUSTOM_TYPE
-} declaration_type_base_t;
-
-typedef struct declaration_type_modifier_s {
+struct declaration_type_modifier_s {
     bool is_const;
     bool is_volatile;
     bool is_unsigned;
     bool is_register;
-} declaration_type_modifier_t;
+};
 
-typedef struct declaration_type_s declaration_type_t;
-
-typedef struct field_s {
+struct field_s {
     struct field_s * next;
     statement_declaration_t * declaration;
-} field_t;
+};
 
-typedef struct declaration_type_base_type_s {
+struct declaration_type_base_type_s {
     bool is_primitive;
     char *identifier;
     union {
         field_t *fields;
 		statement_type_declaration_t *typedef_type;
     };
-} declaration_type_base_type_t;
+};
 
 /*!
  * TODO: add linkage type (static/extern)

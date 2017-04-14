@@ -44,7 +44,7 @@ statement_expression_t * create_const_expression(
 		goto cleanup;
 	}
 
-	new_stmt->type = EXPRESSION_TYPE_CONST;
+	new_stmt->expression_type = EXPRESSION_TYPE_CONST;
 	new_stmt->constant = value;
 
 	return new_stmt;
@@ -78,7 +78,7 @@ statement_expression_t * create_identifier_expression(
 
 	strncpy(identifier_copy, identifier, identifier_len);
 
-	new_stmt->type = EXPRESSION_TYPE_IDENTIFIER;
+	new_stmt->expression_type = EXPRESSION_TYPE_IDENTIFIER;
 	new_stmt->identifier = identifier_copy;
 
 	return new_stmt;

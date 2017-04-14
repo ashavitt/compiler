@@ -260,8 +260,8 @@ bool add_type(
 }
 
 type_t *get_declaration_type(
-		type_space_t *type_space,
-		statement_declaration_t *declaration
+	type_space_t *type_space,
+	statement_declaration_t *declaration
 ) {
 	type_t *new_type = malloc(sizeof(*new_type));
 	if (NULL == new_type) {
@@ -314,7 +314,7 @@ type_t *get_declaration_type(
 }
 
 
-static bool add_primitive(
+bool add_primitive(
 	type_space_t *type_space,
 	char *primitive_identifier,
 	unsigned long size
@@ -353,33 +353,6 @@ type_space_t *create_empty_type_space(type_space_t *parent) {
 	empty_space->enum_space = NULL;
 	empty_space->union_space = NULL;
 	empty_space->parent = parent;
-
-	if (empty_space->parent != NULL) {
-		return empty_space;
-	}
-
-	/* TODO: free recursively */
-	/* initialize primitives */
-	if (!add_primitive(empty_space, "int", 4)) {
-		return NULL;
-	}
-
-	if (!add_primitive(empty_space, "char", 1)) {
-		return NULL;
-	}
-
-	if (!add_primitive(empty_space, "short", 2)) {
-		return NULL;
-	}
-
-	if (!add_primitive(empty_space, "long long", 16)) {
-		return NULL;
-	}
-
-	if (!add_primitive(empty_space, "long", 8)) {
-		return NULL;
-	}
-
 	return empty_space;
 }
 

@@ -127,7 +127,7 @@ void add_statement(
 void debug_expression(statement_expression_t * expr, int offset)
 {
 	printf("%*sExpression type: ", offset * debug_shift_width, "");
-	switch (expr->type)
+	switch (expr->expression_type)
 	{
 		case EXPRESSION_TYPE_OP:
 			printf("operator\n");

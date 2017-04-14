@@ -5,59 +5,61 @@ static bool is_lvalue(
 	type_space_t *type_space,
 	statement_expression_t *expression
 ) {
-	return expression->type == EXPRESSION_TYPE_IDENTIFIER /* ||
+	return expression->expression_type == EXPRESSION_TYPE_IDENTIFIER /* ||
 		   expression->type == EXPRESSION_TYPE_OP && expression->exp_op.op = OP_DEREF */;
 }
 
 bool type_check_expression(
 	type_space_t *type_space,
 	statement_expression_t *expression,
-	closure_t *closure,
-	/* OUT */ type_t ** expression_type
+	closure_t *closure
 ) {
 	type_t *exp1_type = NULL, *exp2_type = NULL, *exp3_type = NULL;
 	variable_t *variable = NULL;
-	if (EXPRESSION_TYPE_CONST == expression->type) {
-		if (NULL != expression_type) {
-			/* we only support int constant right now */
-			*expression_type = lookup_type(type_space, "int");
-		}
+	if (EXPRESSION_TYPE_CONST == expression->expression_type) {
+		expression->type = lookup_type(type_space, "int");
 		return true;
-	} else if (EXPRESSION_TYPE_IDENTIFIER == expression->type) {
-		if (NULL != expression_type) {
-			variable = get_variable(closure, expression->identifier);
-			if (NULL == variable) {
-				/* variable does not exist */
-				return false;
-			}
-			*expression_type = variable->type;
+	} else if (EXPRESSION_TYPE_IDENTIFIER == expression->expression_type) {
+		variable = get_variable(closure, expression->identifier);
+		if (NULL == variable) {
+			/* variable does not exist */
+			return false;
 		}
+		expression->type = variable->type;
 		return true;
 	}
 
 	/* assuming EXPRESSION_TYPE_OP */
-	if (expression->type != EXPRESSION_TYPE_OP) {
+	if (expression->expression_type != EXPRESSION_TYPE_OP) {
 		/* unhandled expression type */
 		return false;
 	}
 
 	/* type check the subexpressions */
 	if ((NULL != expression->exp_op.exp1) &&
-		!type_check_expression(type_space, expression->exp_op.exp1, closure, &exp1_type)
-		) {
+		!type_check_expression(type_space, expression->exp_op.exp1, closure)
+	) {
 		return false;
+	}
+	if (expression->exp_op.exp1 != NULL) {
+		exp1_type = expression->exp_op.exp1->type;
 	}
 	if ((NULL != expression->exp_op.exp2) &&
-		!type_check_expression(type_space, expression->exp_op.exp2, closure, &exp2_type)
-		) {
+		!type_check_expression(type_space, expression->exp_op.exp2, closure)
+	) {
 		return false;
+	}
+	if (expression->exp_op.exp2 != NULL) {
+		exp2_type = expression->exp_op.exp2->type;
 	}
 	if ((NULL != expression->exp_op.exp3) &&
-		!type_check_expression(type_space, expression->exp_op.exp3, closure, &exp3_type)
-		) {
+		!type_check_expression(type_space, expression->exp_op.exp3, closure)
+	) {
 		return false;
 	}
-
+	if (expression->exp_op.exp3 != NULL) {
+		exp3_type = expression->exp_op.exp3->type;
+	}
 
 	switch (expression->exp_op.op) {
 		case OP_MUL:
@@ -65,9 +67,7 @@ bool type_check_expression(
 		case OP_DIV:
 		case OP_SUB:
 		case OP_ADD:
-			if (NULL != expression_type) {
-				*expression_type = exp1_type;
-			}
+			expression->type = exp1_type;
 			return is_same_type(type_space, exp1_type, exp2_type) && /* we are yet to support conversions */
 				   exp1_type->type == DECLARATION_TYPE_BASE_PRIMITIVE &&
 				   exp2_type->type == DECLARATION_TYPE_BASE_PRIMITIVE;
@@ -79,21 +79,17 @@ bool type_check_expression(
 		case OP_GREATER_EQUAL:
 		case OP_LESS:
 		case OP_LESS_EQUAL:
-			if (NULL != expression_type) {
-				*expression_type = lookup_type(type_space, "int");
-				if (NULL == *expression_type) {
-					/* weird internal error */
-					return false;
-				}
+			expression->type = lookup_type(type_space, "int");
+			if (NULL == expression->type) {
+				/* weird internal error */
+				return false;
 			}
 			/* we don't support conversion yet */
 			return is_same_type(type_space, exp1_type, exp2_type) &&
 				   (exp1_type->type == DECLARATION_TYPE_BASE_PRIMITIVE ||
 					exp1_type->deref_count > 0);
 		case OP_ASSIGN:
-			if (NULL != expression_type) {
-				*expression_type = exp1_type;
-			}
+			expression->type = exp1_type;
 			/* we don't support conversion yet */
 			return is_same_type(type_space, exp1_type, exp2_type) &&
 				   is_lvalue(type_space, expression->exp_op.exp1);
@@ -137,16 +133,17 @@ static bool type_check_loop(
 ) {
 	type_t *condition_type = NULL;
 
-	if ((NULL != loop->init_expression) && !type_check_expression(type_space, loop->init_expression, closure, NULL)) {
+	if ((NULL != loop->init_expression) && !type_check_expression(type_space, loop->init_expression, closure)) {
 		return false;
 	}
-	if (!type_check_expression(type_space, loop->condition_expression, closure, &condition_type)) {
+	if (!type_check_expression(type_space, loop->condition_expression, closure)) {
 		return false;
 	}
+	condition_type = loop->condition_expression->type;
 	if (
 		(NULL != loop->iteration_expression) &&
-		!type_check_expression(type_space, loop->iteration_expression, closure, NULL)
-		) {
+		!type_check_expression(type_space, loop->iteration_expression, closure)
+	) {
 		return false;
 	}
 	/*if (!type_check_block(type_space, loop->loop_body, closure)) {
@@ -163,12 +160,13 @@ static bool type_check_if(
 ) {
 	type_t *if_type = NULL;
 	if (
-		!type_check_expression(type_space, if_statement->if_expr, closure, &if_type ) /* ||
+		!type_check_expression(type_space, if_statement->if_expr, closure) /* ||
 		!type_check_block(type_space, if_statement->if_block, closure) ||
 		!type_check_block(type_space, if_statement->else_block, closure) */
-		) {
+	) {
 		return false;
 	}
+	if_type = if_statement->if_expr->type;
 	/* TODO: shouldn't we have bool? */
 	return is_same_type(type_space, if_type, lookup_type(type_space, "int"));
 }
@@ -191,7 +189,7 @@ static bool type_check_statement(
 		case STATEMENT_TYPE_IFELSE:
 			return type_check_if(type_space, &statement->ifelse, closure);
 		case STATEMENT_TYPE_EXPRESSION:
-			return type_check_expression(type_space, &statement->expression, closure, NULL);
+			return type_check_expression(type_space, &statement->expression, closure);
 		case STATEMENT_TYPE_BREAK:
 			break;
 		default:

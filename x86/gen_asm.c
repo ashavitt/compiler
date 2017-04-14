@@ -75,7 +75,7 @@ bool load_expression_to_register(
 ) {
 	variable_t * expression_result = NULL;
 
-	switch (expression->type) {
+	switch (expression->expression_type) {
 		case EXPRESSION_TYPE_CONST:
 			return load_const_to_register(expression->constant, closure, target_register);
 		case EXPRESSION_TYPE_IDENTIFIER:
@@ -97,16 +97,16 @@ static variable_t * allocate_variable_from_destination(
 	type_space_t * type_space
 ) {
 	type_t *expression_type = NULL;
-	if (dst_expression->type == EXPRESSION_TYPE_IDENTIFIER) {
+	if (dst_expression->expression_type == EXPRESSION_TYPE_IDENTIFIER) {
 		return get_variable(closure, dst_expression->identifier);
 	}
 
 	/* TODO: recursively check for type of expression */
 	/* TODO: reconsider this */
-	if (!type_check_expression(type_space, dst_expression, closure, &expression_type)) {
+	if (!type_check_expression(type_space, dst_expression, closure)) {
 		return NULL;
 	}
-
+	expression_type = dst_expression->type;
 	return allocate_variable(closure, "", VALUE_TYPE_EXPRESSION_RESULT, expression_type);
 }
 
@@ -114,7 +114,7 @@ bool generate_assignment(statement_expression_t * expression, closure_t * closur
 	expression_op_t * assignment = &expression->exp_op;
 
 	/* we are yet to handle non-variable lvalues */
-	if (assignment->exp1->type != EXPRESSION_TYPE_IDENTIFIER) {
+	if (assignment->exp1->expression_type != EXPRESSION_TYPE_IDENTIFIER) {
 		return false;
 	}
 
@@ -129,7 +129,7 @@ bool generate_assignment(statement_expression_t * expression, closure_t * closur
 	}
 
 	memset(node, 0, sizeof(*node));
-	if (assignment->exp1->type == EXPRESSION_TYPE_IDENTIFIER) {
+	if (assignment->exp1->expression_type == EXPRESSION_TYPE_IDENTIFIER) {
 		if(!generate_expression(assignment->exp2, closure, type_space)) {
 			return false;
 		}
@@ -244,9 +244,10 @@ bool generate_unary_operator(
         goto cleanup;
     }
 
-	if (!type_check_expression(type_space, expression->exp_op.exp1, closure, &expression_type)){
+	if (!type_check_expression(type_space, expression->exp_op.exp1, closure)){
 		goto cleanup;
 	}
+	expression_type = expression->exp_op.exp1->type;
     variable_t * result =  allocate_variable(closure, "", VALUE_TYPE_EXPRESSION_RESULT, expression_type);
 
     opcode_asm->opcode = opcode;
@@ -485,7 +486,7 @@ bool generate_operation(statement_expression_t * expression, closure_t * closure
 }
 
 static bool generate_expression(statement_expression_t * expression, closure_t * closure, type_space_t *type_space) {
-	switch (expression->type) {
+	switch (expression->expression_type) {
 		case EXPRESSION_TYPE_CONST:
 			/* well, the fuck we should do here */
 			break;
@@ -927,16 +928,60 @@ bool generate_assembly(closure_t * closure, int out_fd) {
 	return true;
 }
 
+static type_space_t *generate_top_level_type_space() {
+	bool success = false;
+	type_space_t *top_level_space = create_empty_type_space(NULL);
+	if (NULL == top_level_space) {
+		goto cleanup;
+	}
+
+	/* initialize primitives */
+	if (!add_primitive(top_level_space, "int", 4)) {
+		goto cleanup;
+	}
+
+	if (!add_primitive(top_level_space, "char", 1)) {
+		goto cleanup;
+	}
+
+	if (!add_primitive(top_level_space, "short", 2)) {
+		goto cleanup;
+	}
+
+	/* add primitive generation operations */
+
+
+	success = true;
+
+cleanup:
+	if (!success && NULL != top_level_space) {
+		free(top_level_space);
+	}
+	return top_level_space;
+}
+
 bool gen_asm_x86(function_node_t * function_list, int out_fd)
 {
 	function_node_t * current_function = function_list;
 	function_parameter_t *current_parameter = NULL;
+	type_space_t *top_level_type_space = NULL;
 	type_t *current_parameter_type = NULL;
+	closure_t *top_level_closure = NULL;
+
+	top_level_type_space = generate_top_level_type_space();
+	if (NULL == top_level_type_space) {
+		return false;
+	}
+
+	top_level_closure = enter_new_closure(NULL, "global_closure");
+	if (NULL == top_level_closure) {
+		return false;
+	}
 
 	while (current_function != NULL)
 	{
-		type_space_t * type_space = create_empty_type_space(NULL);
-		closure_t *function_closure = enter_new_closure(NULL, current_function->function->identifier);
+		type_space_t * type_space = create_empty_type_space(top_level_type_space);
+		closure_t *function_closure = enter_new_closure(top_level_closure, current_function->function->identifier);
 
 		/* add parameters to the function closure */
 		current_parameter = current_function->function->parameter_list;
