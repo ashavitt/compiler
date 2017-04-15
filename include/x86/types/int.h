@@ -13,5 +13,7 @@ generation_function_t generate_int_not_equal;
 generation_function_t generate_int_equal;
 generation_function_t generate_int_greater_than;
 generation_function_t generate_int_greater_than_equal;
+generation_function_t generate_int_less_than;
+generation_function_t generate_int_less_than_equal;
 
 #endif
