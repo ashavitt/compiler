@@ -129,7 +129,7 @@ static unsigned long calculate_size(type_space_t *type_space, declaration_type_t
 	return 0;
 }
 
-bool add_type(
+type_t * add_type(
 	type_space_t *type_space,
 	statement_type_declaration_t *declaration
 ) {
@@ -140,11 +140,11 @@ bool add_type(
 	type_field_t *type_fields = NULL;
 
 	if (NULL == new_type) {
-		return false;
+		return NULL;
 	}
 
 	if (declaration->type.type_base == DECLARATION_TYPE_BASE_PRIMITIVE) {
-		return false; /* WHAT THE FUCK?, we only add via add_primitive */
+		return NULL; /* WHAT THE FUCK?, we only add via add_primitive */
 	}
 
 	switch (declaration->type.type_base) {
@@ -166,7 +166,7 @@ bool add_type(
 	if (existing_type != NULL) {
 		/* type already exists */
 		free(new_type);
-		return false;
+		return NULL;
 	}
 
 	new_type->modifier = (declaration_type_modifier_t) {
@@ -182,7 +182,7 @@ bool add_type(
 	/* internal error */
 	if (new_type->size == 0) {
 		free(new_type);
-		return false;
+		return NULL;
 	}
 
 	/* TODO: should we deep-copy? */
@@ -198,13 +198,13 @@ bool add_type(
 		type_fields = new_type->fields;
 		if (NULL == new_type->fields) {
 			free(new_type);
-			return false;
+			return NULL;
 		}
 		type_fields->type = get_declaration_type(type_space, fields->declaration);
 		if (NULL == type_fields->type) {
 			/* TODO: recursivly free the allocated list */
 			free(new_type);
-			return false;
+			return NULL;
 		}
 		/* TODO: should we deep-copy? */
 		type_fields->field_name = fields->declaration->identifier;
@@ -215,7 +215,7 @@ bool add_type(
 			if (NULL == type_fields->next_field) {
 				/* TODO: recursivly free the allocated list */
 				free(new_type);
-				return false;
+				return NULL;
 			}
 			type_fields = type_fields->next_field;
 			type_fields->type = get_declaration_type(type_space, fields->declaration);
@@ -256,7 +256,7 @@ bool add_type(
 
 	new_type->next = *space_to_insert_to;
 	*space_to_insert_to = new_type;
-	return true;
+	return new_type;
 }
 
 type_t *get_declaration_type(
@@ -314,7 +314,7 @@ type_t *get_declaration_type(
 }
 
 
-bool add_primitive(
+type_t * add_primitive(
 	type_space_t *type_space,
 	char *primitive_identifier,
 	unsigned long size
@@ -323,7 +323,7 @@ bool add_primitive(
 
 	current_type = malloc(sizeof(*current_type));
 	if (NULL == current_type) {
-		return false;
+		return NULL;
 	}
 	/* TODO: should we deep-copy? */
 	current_type->name = primitive_identifier;
@@ -339,7 +339,7 @@ bool add_primitive(
 	};
 	current_type->deref_count = 0;
 	type_space->normal_space = current_type;
-	return true;
+	return current_type;
 }
 
 type_space_t *create_empty_type_space(type_space_t *parent) {

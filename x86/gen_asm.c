@@ -5,10 +5,11 @@
 #include <x86/closure.h>
 #include <types.h>
 #include <type_check.h>
+#include <x86/types/int.h>
 
-static bool generate_expression(statement_expression_t * expression, closure_t * closure, type_space_t *type_space);
+bool generate_expression(statement_expression_t * expression, closure_t * closure, type_space_t *type_space);
 
-bool store_register_to_variable(variable_t * variable, register_e source_register, closure_t * closure) {
+static bool store_register_to_variable(variable_t * variable, register_e source_register, closure_t * closure) {
     asm_node_t * node_store = malloc(sizeof(*node_store));
 
     if (NULL == node_store) {
@@ -24,7 +25,7 @@ bool store_register_to_variable(variable_t * variable, register_e source_registe
     return true;
 }
 
-bool load_from_stack(variable_t * variable, closure_t * closure, register_e target_register) {
+static bool load_from_stack(variable_t * variable, closure_t * closure, register_e target_register) {
 	asm_node_t * node = NULL;
 
 	if (NULL == variable) {
@@ -52,7 +53,7 @@ bool load_from_stack(variable_t * variable, closure_t * closure, register_e targ
 	return true;
 }
 
-bool load_const_to_register(long constant, closure_t * closure, register_e target_register) {
+static bool load_const_to_register(long constant, closure_t * closure, register_e target_register) {
 	asm_node_t * node = malloc(sizeof(*node));
 	if (NULL == node) {
 		return false;
@@ -67,7 +68,7 @@ bool load_const_to_register(long constant, closure_t * closure, register_e targe
 	return true;
 }
 
-bool load_expression_to_register(
+static bool load_expression_to_register(
 	statement_expression_t * expression,
 	closure_t * closure,
 	register_e target_register,
@@ -91,401 +92,8 @@ bool load_expression_to_register(
 	}
 }
 
-static variable_t * allocate_variable_from_destination(
-	statement_expression_t * dst_expression,
-	closure_t * closure,
-	type_space_t * type_space
-) {
-	type_t *expression_type = NULL;
-	if (dst_expression->expression_type == EXPRESSION_TYPE_IDENTIFIER) {
-		return get_variable(closure, dst_expression->identifier);
-	}
-
-	/* TODO: recursively check for type of expression */
-	/* TODO: reconsider this */
-	if (!type_check_expression(type_space, dst_expression, closure)) {
-		return NULL;
-	}
-	expression_type = dst_expression->type;
-	return allocate_variable(closure, "", VALUE_TYPE_EXPRESSION_RESULT, expression_type);
-}
-
-bool generate_assignment(statement_expression_t * expression, closure_t * closure, type_space_t *type_space) {
-	expression_op_t * assignment = &expression->exp_op;
-
-	/* we are yet to handle non-variable lvalues */
-	if (assignment->exp1->expression_type != EXPRESSION_TYPE_IDENTIFIER) {
-		return false;
-	}
-
-	variable_t * assigned_variable = get_variable(closure, assignment->exp1->identifier);
-	if (NULL == assigned_variable) {
-		return false;
-	}
-
-	asm_node_t * node = malloc(sizeof(*node));
-	if (NULL == node) {
-		return false;
-	}
-
-	memset(node, 0, sizeof(*node));
-	if (assignment->exp1->expression_type == EXPRESSION_TYPE_IDENTIFIER) {
-		if(!generate_expression(assignment->exp2, closure, type_space)) {
-			return false;
-		}
-
-		if (!load_expression_to_register(assignment->exp2, closure, REGISTER_EAX, type_space)) {
-			return false;
-		}
-
-		node->opcode = OPCODE_MOV;
-		node->operand1.type = OPERAND_TYPE_STACK_DWORD;
-		node->operand1.stack_offset = assigned_variable->position.stack_offset;
-		node->operand2.type = OPERAND_TYPE_REG;
-		node->operand2.reg = REGISTER_EAX;
-
-		add_instruction_to_closure(node, closure);
-		assigned_variable->evaluated_expression = expression;
-	} else {
-		return false;
-	}
-
-	return true;
-}
-
-
-
-bool generate_arithmetic_operator(
-	statement_expression_t * expression,
-	closure_t * closure,
-	opcode_e opcode,
-	type_space_t *type_space
-) {
-	bool success = false;
+bool generate_expression(statement_expression_t * expression, closure_t * closure, type_space_t *type_space) {
 	variable_t * result = NULL;
-	expression_op_t * arithmetic_expression = &expression->exp_op;
-	asm_node_t * node_op = NULL;
-
-	node_op =  malloc(sizeof(*node_op));
-	if (NULL == node_op) {
-		success = false;
-		goto cleanup;
-	}
-
-	if(!generate_expression(arithmetic_expression->exp1, closure, type_space)) {
-		return false;
-	}
-
-	if(!generate_expression(arithmetic_expression->exp2, closure, type_space)) {
-		return false;
-	}
-
-	if (!load_expression_to_register(arithmetic_expression->exp1, closure, REGISTER_EAX, type_space)) {
-		success = false;
-		goto cleanup;
-	}
-
-	if (!load_expression_to_register(arithmetic_expression->exp2, closure, REGISTER_EBX, type_space)) {
-		success = false;
-		goto cleanup;
-	}
-
-	node_op->operand1.type = OPERAND_TYPE_REG;
-	node_op->operand1.reg = REGISTER_EAX;
-	node_op->operand2.type = OPERAND_TYPE_REG;
-	node_op->operand2.reg = REGISTER_EBX;
-	node_op->opcode = opcode;
-
-	result = allocate_variable_from_destination(arithmetic_expression->exp1, closure, type_space);
-	if (NULL == result) {
-		success = false;
-		goto cleanup;
-	}
-
-	add_instruction_to_closure(node_op, closure);
-    if (!store_register_to_variable(result, REGISTER_EAX, closure)) {
-        success = false;
-        goto cleanup;
-    }
-
-	result->evaluated_expression = expression;
-
-	success = true;
-
-cleanup:
-	if (!success) {
-		if (node_op != NULL) {
-			free(node_op);
-		}
-	}
-	return success;
-}
-
-bool generate_unary_operator(
-	statement_expression_t * expression,
-	closure_t * closure,
-	opcode_e opcode,
-	type_space_t *type_space
-) {
-    bool success = false;
-    asm_node_t * opcode_asm = malloc(sizeof(*opcode_asm));
-	type_t *expression_type = NULL;
-
-    if (NULL == opcode_asm) {
-        goto cleanup;
-    }
-
-    if(!generate_expression(expression->exp_op.exp1, closure, type_space)) {
-        goto cleanup;
-    }
-
-    if (!load_expression_to_register(expression->exp_op.exp1, closure, REGISTER_EAX, type_space))
-    {
-        goto cleanup;
-    }
-
-	if (!type_check_expression(type_space, expression->exp_op.exp1, closure)){
-		goto cleanup;
-	}
-	expression_type = expression->exp_op.exp1->type;
-    variable_t * result =  allocate_variable(closure, "", VALUE_TYPE_EXPRESSION_RESULT, expression_type);
-
-    opcode_asm->opcode = opcode;
-    opcode_asm->operand1.type = OPERAND_TYPE_REG;
-    opcode_asm->operand1.reg = REGISTER_EAX;
-    opcode_asm->operand2.type = OPERAND_TYPE_NONE;
-    add_instruction_to_closure(opcode_asm, closure);
-    opcode_asm = NULL;
-
-    if (!store_register_to_variable(result, REGISTER_EAX, closure)) {
-        goto cleanup;
-    }
-
-    result->evaluated_expression = expression;
-    success = true;
-
-cleanup:
-    if (NULL != opcode_asm) {
-        free(opcode_asm);
-    }
-    return success;
-}
-
-bool generate_multiplication(statement_expression_t * expression, closure_t * closure, type_space_t * type_space) {
-	asm_node_t * mul_asm = NULL;
-	variable_t * result = NULL;
-
-	/* TODO: fix when there are conversions */
-	result = allocate_variable_from_destination(expression->exp_op.exp1, closure, type_space);
-	if (NULL == result) {
-		return false;
-	}
-
-	if (!generate_expression(expression->exp_op.exp1, closure, type_space)) {
-		return false;
-	}
-
-	if (!generate_expression(expression->exp_op.exp2, closure, type_space)) {
-		return false;
-	}
-
-	if (!load_expression_to_register(expression->exp_op.exp1, closure, REGISTER_EBX, type_space)) {
-		return false;
-	}
-
-	if (!load_expression_to_register(expression->exp_op.exp2, closure, REGISTER_EAX, type_space)) {
-		return false;
-	}
-
-	mul_asm =  malloc(sizeof(*mul_asm));
-	if (NULL == mul_asm) {
-		return false;
-	}
-
-	mul_asm->opcode = OPCODE_MUL;
-	mul_asm->operand1.type = OPERAND_TYPE_REG;
-	mul_asm->operand1.reg = REGISTER_EBX;
-	mul_asm->operand2.type = OPERAND_TYPE_NONE;
-	add_instruction_to_closure(mul_asm, closure);
-	mul_asm = NULL;
-	if (!store_register_to_variable(result, REGISTER_EAX, closure)) {
-		return false;
-	}
-	result->evaluated_expression = expression;
-	return true;
-}
-
-bool generate_comparison_operator(
-	statement_expression_t * expression,
-	closure_t * closure,
-	operator_type_e operator_type,
-	type_space_t *type_space
-) {
-	asm_node_t * set_result_op = malloc(sizeof(*set_result_op));
-	bool success = false;
-	bool signed_operators = false;
-	variable_t * result = NULL;
-	expression_op_t * comparison_expression = &expression->exp_op;
-	asm_node_t * substraction_op = NULL;
-	opcode_e set_result_opcode;
-
-	/* TODO set the signed_operators variable accordingly */
-
-	substraction_op =  malloc(sizeof(*substraction_op));
-	if (NULL == substraction_op) {
-		success = false;
-		goto cleanup;
-	}
-
-	/* compute the operands first */
-	if (!generate_expression(comparison_expression->exp1, closure, type_space)) {
-		success = false;
-		return false;
-	}
-
-	if (!generate_expression(comparison_expression->exp2, closure, type_space)) {
-		success = false;
-		return false;
-	}
-
-	if (!load_expression_to_register(comparison_expression->exp1, closure, REGISTER_EAX, type_space)) {
-		success = false;
-		goto cleanup;
-	}
-
-	if (!load_expression_to_register(comparison_expression->exp2, closure, REGISTER_EBX, type_space)) {
-		success = false;
-		goto cleanup;
-	}
-
-	/* substract the operands for comparison */
-
-	substraction_op->operand1.type = OPERAND_TYPE_REG;
-	substraction_op->operand1.reg = REGISTER_EAX;
-	substraction_op->operand2.type = OPERAND_TYPE_REG;
-	substraction_op->operand2.reg = REGISTER_EBX;
-	substraction_op->opcode = OPCODE_SUB;
-
-	add_instruction_to_closure(substraction_op, closure);
-
-	/* calculate the result */
-
-	switch (comparison_expression->op)
-	{
-		case OP_EQUAL:
-			set_result_opcode = OPCODE_SETE;
-			break;
-		case OP_NEQUAL:
-			set_result_opcode = OPCODE_SETNE;
-			break;
-		case OP_LESS:
-			if (signed_operators) {
-				set_result_opcode = OPCODE_SETL;
-			} else {
-				set_result_opcode = OPCODE_SETB;
-			}
-			break;
-		case OP_LESS_EQUAL:
-			if (signed_operators) {
-				set_result_opcode = OPCODE_SETLE;
-			} else {
-				set_result_opcode = OPCODE_SETBE;
-			}
-			break;
-		case OP_GREATER:
-			if (signed_operators) {
-				set_result_opcode = OPCODE_SETG;
-			} else {
-				set_result_opcode = OPCODE_SETA;
-			}
-			break;
-		case OP_GREATER_EQUAL:
-			if (signed_operators) {
-				set_result_opcode = OPCODE_SETGE;
-			} else {
-				set_result_opcode = OPCODE_SETAE;
-			}
-			break;
-		default:
-			/* unhandled */
-			goto cleanup;
-	}
-
-	set_result_op->operand1.type = OPERAND_TYPE_REG;
-	set_result_op->operand1.reg = REGISTER_ECX;
-	set_result_op->opcode = set_result_opcode;
-
-	add_instruction_to_closure(set_result_op, closure);
-
-	type_t * int_type = lookup_type(type_space, "int");
-	if (NULL == int_type) {
-		/* internal error */
-		goto cleanup;
-	}
-	result = allocate_variable(closure, "", VALUE_TYPE_EXPRESSION_RESULT, int_type);
-	if (NULL == result) {
-		success = false;
-		goto cleanup;
-	}
-
-	if (!store_register_to_variable(result, REGISTER_ECX, closure)) {
-		success = false;
-		goto cleanup;
-	}
-
-	result->evaluated_expression = expression;
-
-	success = true;
-
-cleanup:
-	if (!success) {
-		if (substraction_op != NULL) {
-			free(substraction_op);
-		}
-	}
-	return success;
-}
-
-bool generate_operation(statement_expression_t * expression, closure_t * closure, type_space_t *type_space) {
-	switch (expression->exp_op.op) {
-		case OP_ASSIGN:
-			return generate_assignment(expression, closure, type_space);
-		case OP_ADD:
-			return generate_arithmetic_operator(expression, closure, OPCODE_ADD, type_space);
-		case OP_BAND:
-			return generate_arithmetic_operator(expression, closure, OPCODE_AND, type_space);
-		case OP_BOR:
-			return generate_arithmetic_operator(expression, closure, OPCODE_OR, type_space);
-		case OP_SUB:
-			return generate_arithmetic_operator(expression, closure, OPCODE_SUB, type_space);
-		case OP_NEG:
-			return generate_unary_operator(expression, closure, OPCODE_NEG, type_space);
-		case OP_MUL:
-			return generate_multiplication(expression, closure, type_space);
-		case OP_PLUS:
-			/* basically just transfer expression result to the current one */
-			if (!generate_expression(expression->exp_op.exp1, closure, type_space)) {
-				return false;
-			}
-			variable_t * result = lookup_expression_result(expression->exp_op.exp1, closure, type_space);
-			if (result == NULL) {
-				return false;
-			}
-			result->evaluated_expression = expression;
-			return true;
-		case OP_EQUAL:
-		case OP_NEQUAL:
-		case OP_LESS:
-		case OP_LESS_EQUAL:
-		case OP_GREATER:
-		case OP_GREATER_EQUAL:
-			return generate_comparison_operator(expression, closure, expression->exp_op.op, type_space);
-		default:
-			return false;
-	}
-}
-
-static bool generate_expression(statement_expression_t * expression, closure_t * closure, type_space_t *type_space) {
 	switch (expression->expression_type) {
 		case EXPRESSION_TYPE_CONST:
 			/* well, the fuck we should do here */
@@ -494,9 +102,17 @@ static bool generate_expression(statement_expression_t * expression, closure_t *
 			/* same with const.. */
 			break;
 		case EXPRESSION_TYPE_OP:
-			if(!generate_operation(expression, closure, type_space)) {
+			/* TODO: call type's operation */
+			result  = expression->type->allocate_variable(
+				expression->type,
+				closure,
+				NULL,
+				VALUE_TYPE_EXPRESSION_RESULT
+			);
+			if (NULL == result) {
 				return false;
 			}
+			return result->op->generate_operation(expression, closure, type_space);
 			break;
 	}
 
@@ -524,7 +140,7 @@ static bool generate_ifelse(statement_ifelse_t * ifelse, closure_t * closure, ty
 	check_evaluated_expression = malloc(sizeof(*check_evaluated_expression));
 	jmp_over_if = malloc(sizeof(*jmp_over_if));
 
-	if(!generate_expression(ifelse->if_expr, closure, type_space)) {
+	if (!generate_expression(ifelse->if_expr, closure, type_space)) {
 		return false;
 	}
 
@@ -533,6 +149,7 @@ static bool generate_ifelse(statement_ifelse_t * ifelse, closure_t * closure, ty
 		return false;
 	}
 
+	/* TODO: convert to bool or int operation */
 	/* load the evaluated expression and check if its 0 */
 	check_evaluated_expression->opcode = OPCODE_OR;
 	check_evaluated_expression->operand1.type = OPERAND_TYPE_REG;
@@ -915,8 +532,7 @@ bool generate_assembly(closure_t * closure, int out_fd) {
 				current_instruction_text,
 				sizeof(*current_instruction_text) * 256,
 				closure
-			))
-			{
+			)) {
 				return false;
 			}
 			write(out_fd, current_instruction_text, strlen(current_instruction_text));
@@ -928,34 +544,66 @@ bool generate_assembly(closure_t * closure, int out_fd) {
 	return true;
 }
 
+bool initialize_type_generation(type_t * added_type) {
+	if (NULL == added_type) {
+		return false;
+	}
+
+	/* test for pointer first */
+	if (added_type->deref_count > 0) {
+		/* TODO: initialize with pointer function */
+	}
+
+	switch (added_type->type) {
+		case DECLARATION_TYPE_BASE_PRIMITIVE:
+			/* TODO: typedef with primitive */
+			break;
+		case DECLARATION_TYPE_BASE_CUSTOM_TYPE:
+			return false; /* this should not happen because our type checker resolves typedefs */
+		case DECLARATION_TYPE_BASE_STRUCT:
+			/* TODO: struct definition or typedef with struct */
+			break;
+		case DECLARATION_TYPE_BASE_UNION:
+			/* TODO: union definitions or typedef with union */
+			break;
+		case DECLARATION_TYPE_BASE_ENUM:
+			/* TODO */
+			break;
+	}
+	return false;
+}
+
 static type_space_t *generate_top_level_type_space() {
 	bool success = false;
+	type_t *current_primitive = NULL;
 	type_space_t *top_level_space = create_empty_type_space(NULL);
 	if (NULL == top_level_space) {
 		goto cleanup;
 	}
 
+	/* TODO: add primitive variable allocation function */
+
 	/* initialize primitives */
-	if (!add_primitive(top_level_space, "int", 4)) {
+	current_primitive = add_primitive(top_level_space, "int", 4);
+	if (NULL == current_primitive) {
+		goto cleanup;
+	}
+	current_primitive->allocate_variable = &int_allocate_variable;
+
+	if (NULL == add_primitive(top_level_space, "char", 1)) {
 		goto cleanup;
 	}
 
-	if (!add_primitive(top_level_space, "char", 1)) {
+	if (NULL == add_primitive(top_level_space, "short", 2)) {
 		goto cleanup;
 	}
-
-	if (!add_primitive(top_level_space, "short", 2)) {
-		goto cleanup;
-	}
-
-	/* add primitive generation operations */
-
 
 	success = true;
 
 cleanup:
 	if (!success && NULL != top_level_space) {
 		free(top_level_space);
+		top_level_space = NULL;
 	}
 	return top_level_space;
 }
@@ -1006,7 +654,6 @@ bool gen_asm_x86(function_node_t * function_list, int out_fd)
 			current_parameter = current_parameter->next;
 		}
 
-		/* TODO: shouldn't closure be per-block? */
 		code_block_t * code_block = current_function->function->function_code;
 		if (NULL == type_space) {
 			printf("Failed allocating type space");

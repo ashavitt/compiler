@@ -8,6 +8,8 @@ typedef struct type_field_s type_field_t;
 typedef struct type_s type_t;
 typedef struct type_field_s type_field_t;
 typedef struct type_space_s type_space_t;
+typedef struct variable_s variable_t;
+typedef enum value_type value_type_e;
 
 #include <ast.h>
 #include <ast_nodes.h>
@@ -21,6 +23,12 @@ struct type_s {
 	unsigned long deref_count;
     unsigned long size;
     char * name;
+	variable_t * (*allocate_variable)(
+		type_t * this,
+		closure_t *closure,
+		const char * identifier,
+		value_type_e type
+	);
 };
 
 struct type_field_s {
@@ -42,12 +50,12 @@ type_t *lookup_type(
     char * type_name
 );
 
-bool add_type(
+type_t * add_type(
     type_space_t *type_space,
 	statement_type_declaration_t *declaration
 );
 
-bool add_primitive(
+type_t * add_primitive(
 	type_space_t *type_space,
 	char *primitive_identifier,
 	unsigned long size

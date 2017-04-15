@@ -25,7 +25,7 @@ variable_t * lookup_expression_result(
 	return NULL;
 }
 
-static variable_t * get_variable_from_closure(closure_t * closure, char * identifier) {
+static variable_t * get_variable_from_closure(closure_t * closure, const char * identifier) {
 	variable_t * current_variable = NULL;
 	current_variable = closure->parameters;
 	while (current_variable != NULL) {
@@ -37,7 +37,10 @@ static variable_t * get_variable_from_closure(closure_t * closure, char * identi
 
 	current_variable = closure->variables;
 	while (current_variable != NULL) {
-		if (0 == strcmp(current_variable->variable_name, identifier)) {
+		if (
+			(NULL !=current_variable->variable_name) &&
+			(0 == strcmp(current_variable->variable_name, identifier))
+		) {
 			return current_variable;
 		}
 		current_variable = current_variable->next;
@@ -46,7 +49,7 @@ static variable_t * get_variable_from_closure(closure_t * closure, char * identi
 	return NULL;
 }
 
-variable_t * get_variable(closure_t * closure, char * identifier)
+variable_t * get_variable(closure_t * closure, const char * identifier)
 {
 	variable_t * current_variable = NULL;
 
@@ -65,7 +68,7 @@ variable_t * get_variable(closure_t * closure, char * identifier)
 
 static variable_t * allocate_parameter(
 	closure_t * closure,
-	char * identifier,
+	const char * identifier,
 	value_type_e type,
 	type_t *variable_type
 ) {
@@ -76,7 +79,7 @@ static variable_t * allocate_parameter(
 	}
 
 	/* named variable, check for name collision first */
-	if ((strcmp(identifier, "") != 0) &&
+	if ((NULL != identifier) &&
 		(NULL != get_variable_from_closure(closure, identifier))
 	) {
 		free(new_variable);
@@ -118,7 +121,7 @@ static variable_t * allocate_parameter(
 
 variable_t * allocate_variable(
 	closure_t * closure,
-	char * identifier,
+	const char * identifier,
 	value_type_e type,
 	type_t *variable_type
 ) {
@@ -126,7 +129,7 @@ variable_t * allocate_variable(
 	variable_t * new_variable = NULL;
 
 	/* make sure the collision check is made only on named variable */
-	if (strcmp(identifier, "") != 0) {
+	if (NULL != identifier) {
 		/* check that we don't allocate variable with the closure's name
 		 * and check for name collision */
 		if (

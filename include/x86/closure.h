@@ -9,10 +9,10 @@
 #include <stddef.h>
 #include <types.h>
 
-typedef enum {
+typedef enum value_type {
 	VALUE_TYPE_PARAMETER,
     VALUE_TYPE_VARIABLE,
-    VALUE_TYPE_EXPRESSION_RESULT
+    VALUE_TYPE_EXPRESSION_RESULT /* rvalue */
 } value_type_e;
 
 typedef enum {
@@ -52,17 +52,25 @@ typedef struct {
     long stack_offset; // relative to ebp
 } position_t;
 
+typedef struct variable_operations_s {
+
+	bool (*generate_operation)(
+		statement_expression_t * operation,
+		closure_t * closure,
+		type_space_t *type_space
+	);
+
+} variable_operations_t ;
+
 typedef struct variable_s {
     struct variable_s * next;
     value_type_e variable_type;
     position_t position;
     statement_expression_t * evaluated_expression;
 	type_t *type;
-    union {
-        char * variable_name;
-    };
+	variable_operations_t *op;
+	const char * variable_name;
 } variable_t;
-
 
 typedef struct closure {
     struct closure * next_closure;
@@ -89,7 +97,7 @@ struct asm_node
 
 variable_t * allocate_variable(
 	closure_t * closure,
-	char * identifier,
+	const char * identifier,
 	value_type_e type,
 	type_t *variable_type
 );
@@ -107,7 +115,7 @@ variable_t * lookup_expression_result(
 
 variable_t * get_variable(
     closure_t * closure,
-    char * identifier
+    const char * identifier
 );
 
 void add_label_to_node(

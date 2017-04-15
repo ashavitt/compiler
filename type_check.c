@@ -1,12 +1,14 @@
 #include <type_check.h>
 #include <x86/closure.h>
+#include <x86/gen_asm.h>
 
 static bool is_lvalue(
 	type_space_t *type_space,
 	statement_expression_t *expression
 ) {
-	return expression->expression_type == EXPRESSION_TYPE_IDENTIFIER /* ||
-		   expression->type == EXPRESSION_TYPE_OP && expression->exp_op.op = OP_DEREF */;
+	return expression->expression_type == EXPRESSION_TYPE_IDENTIFIER; /* ||
+		   expression->type == EXPRESSION_TYPE_OP && expression->exp_op.op == OP_DEREF ||
+		   expression->type == EXPRESSION_TYPE_OP && expression->exp_op.op == OP_ARRAY_ACCESS */
 }
 
 bool type_check_expression(
@@ -113,6 +115,7 @@ static bool type_check_declaration(
 	if (NULL == declaration_type) {
 		return false;
 	}
+	/* TODO: call type's allocation function */
 	/* we add variables as we type-check*/
 	added_variable = allocate_variable(
 		closure,
@@ -176,11 +179,16 @@ static bool type_check_statement(
 	statement_t *statement,
 	closure_t *closure
 ) {
+	type_t * added_type = NULL;
 	switch (statement->statement_type) {
 		case STATEMENT_TYPE_DECLARATION:
 			return type_check_declaration(type_space, &statement->declaration, closure);
 		case STATEMENT_TYPE_TYPE_DECLARATION:
-			if (!add_type(type_space, &statement->type_declaration)) {
+			added_type = add_type(type_space, &statement->type_declaration);
+			if (NULL != added_type) {
+				return false;
+			}
+			if (!initialize_type_generation(added_type)) {
 				return false;
 			}
 			break;
