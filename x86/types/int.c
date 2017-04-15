@@ -460,6 +460,14 @@ cleanup:
 //	}
 //}
 
+bool generate_int_equal(
+	statement_expression_t * operation,
+	closure_t * closure,
+	type_space_t *type_space
+) {
+	return generate_int_comparison(operation, closure, OP_EQUAL, type_space);
+};
+
 bool generate_int_addition(
 	statement_expression_t * operation,
 	closure_t * closure,

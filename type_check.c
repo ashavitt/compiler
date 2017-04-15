@@ -74,6 +74,39 @@ static bool type_check_add(
 	return true;
 }
 
+static bool type_check_equal(
+	type_space_t *type_space,
+	statement_expression_t * expression,
+	closure_t *closure
+) {
+	type_t *exp1_type = NULL, *exp2_type = NULL;
+
+	if (expression->exp_op.exp1 != NULL || expression->exp_op.exp2 != NULL) {
+		return false;
+	}
+
+	if (
+		!type_check_expression(type_space, expression->exp_op.exp1, closure) ||
+		!type_check_expression(type_space, expression->exp_op.exp2, closure)
+	) {
+		return false;
+	}
+
+	exp1_type = expression->exp_op.exp1->type;
+	exp2_type = expression->exp_op.exp2->type;
+
+	if (
+		!is_same_type(type_space, exp1_type, exp2_type) && /* we are yet to support conversions */
+		(exp1_type->type != DECLARATION_TYPE_BASE_PRIMITIVE) &&
+		(exp2_type->type != DECLARATION_TYPE_BASE_PRIMITIVE)
+	) {
+		return false;
+	}
+
+	expression->generation_function = generate_int_equal;
+	return true;
+}
+
 static bool type_check_assigment(
 	type_space_t *type_space,
 	statement_expression_t * expression,
@@ -157,7 +190,7 @@ static bool(*operation_type_checks[])(
 	type_check_assigment,
 	NULL,
 	NULL,
-	NULL,
+	type_check_equal,
 	NULL,
 	NULL,
 	NULL,
