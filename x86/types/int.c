@@ -460,6 +460,54 @@ cleanup:
 //	}
 //}
 
+bool generate_int_equal(
+	statement_expression_t * operation,
+	closure_t * closure,
+	type_space_t *type_space
+) {
+	return generate_int_comparison(operation, closure, OP_EQUAL, type_space);
+};
+
+bool generate_int_not_equal(
+	statement_expression_t * operation,
+	closure_t * closure,
+	type_space_t *type_space
+) {
+	return generate_int_comparison(operation, closure, OP_NEQUAL, type_space);
+};
+
+bool generate_int_less_than(
+	statement_expression_t * operation,
+	closure_t * closure,
+	type_space_t *type_space
+) {
+	return generate_int_comparison(operation, closure, OP_LESS, type_space);
+};
+
+bool generate_int_less_than_equal(
+	statement_expression_t * operation,
+	closure_t * closure,
+	type_space_t *type_space
+) {
+	return generate_int_comparison(operation, closure, OP_LESS_EQUAL, type_space);
+};
+
+bool generate_int_greater_than(
+	statement_expression_t * operation,
+	closure_t * closure,
+	type_space_t *type_space
+) {
+	return generate_int_comparison(operation, closure, OP_GREATER, type_space);
+};
+
+bool generate_int_greater_than_equal(
+	statement_expression_t * operation,
+	closure_t * closure,
+	type_space_t *type_space
+) {
+	return generate_int_comparison(operation, closure, OP_GREATER_EQUAL, type_space);
+};
+
 bool generate_int_addition(
 	statement_expression_t * operation,
 	closure_t * closure,
