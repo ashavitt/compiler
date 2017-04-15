@@ -19,6 +19,7 @@ set(SOURCE_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/functions.c
     ${CMAKE_CURRENT_SOURCE_DIR}/ast_functions.c
     ${CMAKE_CURRENT_SOURCE_DIR}/x86/types/int.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/x86/types/pointer.c
 )
 
 include_directories(${CMAKE_BINARY_DIR}/lex ${CMAKE_BINARY_DIR}/yacc ${CMAKE_SOURCE_DIR}/include)

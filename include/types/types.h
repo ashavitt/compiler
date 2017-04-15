@@ -14,6 +14,7 @@ typedef enum value_type value_type_e;
 #include <ast.h>
 #include <ast_nodes.h>
 
+
 struct type_s {
     struct type_s *next;
     declaration_type_base_t type;
@@ -23,12 +24,6 @@ struct type_s {
 	unsigned long deref_count;
     unsigned long size;
     char * name;
-	variable_t * (*allocate_variable)(
-		type_t * this,
-		closure_t *closure,
-		const char * identifier,
-		value_type_e type
-	);
 };
 
 struct type_field_s {

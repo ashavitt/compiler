@@ -1,13 +1,17 @@
 #ifndef GEN_INT_H
 #define GEN_INT_H
 
-#include <x86/closure.h>
+#include <ast_nodes.h>
 
-variable_t * int_allocate_variable (
-	type_t * this,
-	closure_t *closure,
-	const char * identifier,
-	value_type_e type
-);
+generation_function_t generate_int_assignment;
+generation_function_t generate_int_addition;
+generation_function_t generate_int_multiplication;
+generation_function_t generate_int_division;
+generation_function_t generate_int_subtraction;
+generation_function_t generate_int_unary_plus;
+generation_function_t generate_int_not_equal;
+generation_function_t generate_int_equal;
+generation_function_t generate_int_greater_than;
+generation_function_t generate_int_greater_than_equal;
 
 #endif

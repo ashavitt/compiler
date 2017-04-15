@@ -1,9 +1,10 @@
-#include <type_check.h>
+#include <types/type_check.h>
 #include <x86/closure.h>
 #include <x86/gen_asm.h>
 #include <memory.h>
+#include <x86/types/int.h>
 
-static bool is_lvalue(
+bool is_lvalue(
 	type_space_t *type_space,
 	statement_expression_t *expression
 ) {
@@ -34,13 +35,148 @@ static type_t * pointer_to(type_t * lvalue_type) {
 	return pointer_type;
 }
 
+static bool type_check_add(
+	type_space_t *type_space,
+	statement_expression_t * expression,
+	closure_t *closure
+) {
+	type_t *exp1_type = NULL, *exp2_type = NULL;
+
+	/* type check the subexpressions */
+	if ((NULL != expression->exp_op.exp1) &&
+		!type_check_expression(type_space, expression->exp_op.exp1, closure)
+	) {
+		return false;
+	}
+	if (expression->exp_op.exp1 != NULL || expression->exp_op.exp2 != NULL) {
+		return false;
+	}
+
+	if (
+		!type_check_expression(type_space, expression->exp_op.exp1, closure) ||
+		!type_check_expression(type_space, expression->exp_op.exp2, closure)
+	) {
+		return false;
+	}
+
+	exp1_type = expression->exp_op.exp1->type;
+	exp2_type = expression->exp_op.exp2->type;
+
+	if (
+		!is_same_type(type_space, exp1_type, exp2_type) && /* we are yet to support conversions */
+		(exp1_type->type != DECLARATION_TYPE_BASE_PRIMITIVE) &&
+		(exp2_type->type != DECLARATION_TYPE_BASE_PRIMITIVE)
+	) {
+		return false;
+	}
+
+	expression->generation_function = generate_int_addition;
+	return true;
+}
+
+static bool type_check_assigment(
+	type_space_t *type_space,
+	statement_expression_t * expression,
+	closure_t *closure
+) {
+	type_t *exp1_type = NULL, *exp2_type = NULL;
+
+	/* type check the subexpressions */
+	if ((NULL != expression->exp_op.exp1) &&
+		!type_check_expression(type_space, expression->exp_op.exp1, closure)
+	) {
+		return false;
+	}
+	if (expression->exp_op.exp1 == NULL || expression->exp_op.exp2 == NULL) {
+		return false;
+	}
+
+	if (
+		!type_check_expression(type_space, expression->exp_op.exp1, closure) ||
+		!type_check_expression(type_space, expression->exp_op.exp2, closure)
+	) {
+		return false;
+	}
+
+	exp1_type = expression->exp_op.exp1->type;
+	exp2_type = expression->exp_op.exp2->type;
+
+	if (
+		!is_same_type(type_space, exp1_type, exp2_type) && /* we are yet to support conversions */
+		!is_lvalue(type_space, expression->exp_op.exp1)
+	) {
+		return false;
+	}
+
+	expression->generation_function = generate_int_assignment;
+	return true;
+}
+
+/*
+ * 	OP_ADD,
+	OP_SUB,
+	OP_MUL,
+	OP_DIV,
+	OP_MOD,
+	OP_BXOR,
+	OP_BAND,
+	OP_BOR,
+	OP_AND,
+	OP_OR,
+	OP_ASSIGN,
+	OP_PLUS,
+	OP_NEG,
+	OP_EQUAL,
+	OP_NEQUAL,
+	OP_BSHIFT_RIGHT,
+	OP_BSHIFT_LEFT,
+	OP_LESS,
+	OP_GREATER,
+	OP_LESS_EQUAL,
+	OP_GREATER_EQUAL,
+	OP_TERNARY,
+	OP_DREF,
+	OP_REF
+ */
+
+static bool(*operation_type_checks[])(
+	type_space_t *type_space,
+	statement_expression_t * expression,
+	closure_t *closure
+) = {
+	type_check_add,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	type_check_assigment,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL
+};
+
 bool type_check_expression(
 	type_space_t *type_space,
 	statement_expression_t *expression,
 	closure_t *closure
 ) {
-	type_t *exp1_type = NULL, *exp2_type = NULL, *exp3_type = NULL;
 	variable_t *variable = NULL;
+
 	if (EXPRESSION_TYPE_CONST == expression->expression_type) {
 		expression->type = lookup_type(type_space, "int");
 		return true;
@@ -60,42 +196,13 @@ bool type_check_expression(
 		return false;
 	}
 
-	/* type check the subexpressions */
-	if ((NULL != expression->exp_op.exp1) &&
-		!type_check_expression(type_space, expression->exp_op.exp1, closure)
-	) {
-		return false;
-	}
-	if (expression->exp_op.exp1 != NULL) {
-		exp1_type = expression->exp_op.exp1->type;
-	}
-	if ((NULL != expression->exp_op.exp2) &&
-		!type_check_expression(type_space, expression->exp_op.exp2, closure)
-	) {
-		return false;
-	}
-	if (expression->exp_op.exp2 != NULL) {
-		exp2_type = expression->exp_op.exp2->type;
-	}
-	if ((NULL != expression->exp_op.exp3) &&
-		!type_check_expression(type_space, expression->exp_op.exp3, closure)
-	) {
-		return false;
-	}
-	if (expression->exp_op.exp3 != NULL) {
-		exp3_type = expression->exp_op.exp3->type;
-	}
-
-	switch (expression->exp_op.op) {
+	/*switch (expression->exp_op.op) {
 		case OP_MUL:
 		case OP_PLUS:
 		case OP_DIV:
 		case OP_SUB:
 		case OP_ADD:
-			expression->type = exp1_type;
-			return is_same_type(type_space, exp1_type, exp2_type) && /* we are yet to support conversions */
-				   exp1_type->type == DECLARATION_TYPE_BASE_PRIMITIVE &&
-				   exp2_type->type == DECLARATION_TYPE_BASE_PRIMITIVE;
+			break;
 		case OP_EQUAL:
 		case OP_NEQUAL:
 		case OP_OR:
@@ -106,16 +213,16 @@ bool type_check_expression(
 		case OP_LESS_EQUAL:
 			expression->type = lookup_type(type_space, "int");
 			if (NULL == expression->type) {
-				/* weird internal error */
+				*//* weird internal error *//*
 				return false;
 			}
-			/* we don't support conversion yet */
+			*//* we don't support conversion yet *//*
 			return is_same_type(type_space, exp1_type, exp2_type) &&
 				   (exp1_type->type == DECLARATION_TYPE_BASE_PRIMITIVE ||
 					exp1_type->deref_count > 0);
 		case OP_ASSIGN:
 			expression->type = exp1_type;
-			/* we don't support conversion yet */
+			*//* we don't support conversion yet *//*
 			return is_same_type(type_space, exp1_type, exp2_type) &&
 				   is_lvalue(type_space, expression->exp_op.exp1);
 		case OP_DREF:
@@ -125,11 +232,19 @@ bool type_check_expression(
 			expression->type = pointer_to(exp1_type);
 			return is_lvalue(type_space, expression->exp_op.exp1);
 		default:
-			/* unhandled operation */
+			*//* unhandled operation *//*
 			return false;
+	}*/
+
+	if (
+		(expression->exp_op.op >= (sizeof(operation_type_checks)/sizeof(operation_type_checks[0]))) ||
+		(NULL == operation_type_checks[expression->exp_op.op])
+	) {
+		/* not implemented */
+		return false;
 	}
 
-	return true;
+	return operation_type_checks[expression->exp_op.op](type_space, expression, closure);
 }
 
 static bool type_check_declaration(

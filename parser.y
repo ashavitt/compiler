@@ -11,7 +11,7 @@
 #include <symbol_table.h>
 #include <ast.h>
 #include <x86/gen_asm.h>
-#include <types.h>
+#include <types/types.h>
 
 static int errors = 0;
 static int yydebug = 0;

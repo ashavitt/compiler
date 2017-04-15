@@ -3,6 +3,8 @@
 
 /* Structs and functions regarding the operations in C without flow control */
 
+#include <stdbool.h>
+
 typedef struct expression_op expression_op_t;
 typedef struct statement_expression statement_expression_t;
 typedef struct statement_declaration statement_declaration_t;
@@ -14,6 +16,14 @@ typedef struct declaration_type_s declaration_type_t;
 typedef struct declaration_type_modifier_s declaration_type_modifier_t;
 typedef struct declaration_type_base_type_s declaration_type_base_type_t;
 typedef struct field_s field_t;
+typedef struct closure closure_t;
+typedef struct type_space_s type_space_t;
+
+typedef bool (generation_function_t)(
+	statement_expression_t * operation,
+	closure_t * closure,
+	type_space_t *type_space
+);
 
 #include <stdbool.h>
 
@@ -78,6 +88,7 @@ struct statement_expression
 		char * identifier;
 	};
 	struct type_s * type;
+	generation_function_t * generation_function;
 };
 
 statement_expression_t * create_op_expression(

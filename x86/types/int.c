@@ -36,14 +36,7 @@ static bool load_int_from_stack(variable_t * variable, closure_t * closure, regi
 
 	node->operand1.type = OPERAND_TYPE_REG;
 	node->operand1.reg = target_register;
-
-	switch (variable->type->size) {
-		case 4: /* TODO: YAY INT ONLY */
-			node->operand2.type = OPERAND_TYPE_STACK_DWORD;
-			break;
-		default:
-			return false;
-	}
+	node->operand2.type = OPERAND_TYPE_STACK_DWORD;
 	node->operand2.stack_offset = variable->position.stack_offset;
 
 	add_instruction_to_closure(node, closure);
@@ -89,8 +82,12 @@ static bool load_int_expression_to_register(
 	}
 }
 
-static bool generate_int_assignment(statement_expression_t * expression, closure_t * closure, type_space_t *type_space) {
-	expression_op_t * assignment = &expression->exp_op;
+bool generate_int_assignment(
+	statement_expression_t * operation,
+	closure_t * closure,
+	type_space_t *type_space
+) {
+	expression_op_t * assignment = &operation->exp_op;
 
 	/* we are yet to handle non-variable lvalues */
 	if (assignment->exp1->expression_type != EXPRESSION_TYPE_IDENTIFIER) {
@@ -124,7 +121,7 @@ static bool generate_int_assignment(statement_expression_t * expression, closure
 		node->operand2.reg = REGISTER_EAX;
 
 		add_instruction_to_closure(node, closure);
-		assigned_variable->evaluated_expression = expression;
+		assigned_variable->evaluated_expression = operation;
 	} else {
 		return false;
 	}
@@ -245,7 +242,11 @@ cleanup:
 	return success;
 }
 
-static bool generate_int_multiplication(statement_expression_t * expression, closure_t * closure, type_space_t * type_space) {
+bool generate_int_multiplication(
+	statement_expression_t * expression,
+	closure_t * closure,
+	type_space_t * type_space
+) {
 	asm_node_t * mul_asm = NULL;
 	variable_t * result = NULL;
 
@@ -420,60 +421,49 @@ cleanup:
 	return success;
 }
 
-static bool generate_int_operation(statement_expression_t * expression, closure_t * closure, type_space_t *type_space) {
-	switch (expression->exp_op.op) {
-		case OP_ASSIGN:
-			return generate_int_assignment(expression, closure, type_space);
-		case OP_ADD:
-			return generate_int_arithmetic(expression, closure, OPCODE_ADD, type_space);
-		case OP_BAND:
-			return generate_int_arithmetic(expression, closure, OPCODE_AND, type_space);
-		case OP_BOR:
-			return generate_int_arithmetic(expression, closure, OPCODE_OR, type_space);
-		case OP_SUB:
-			return generate_int_arithmetic(expression, closure, OPCODE_SUB, type_space);
-		case OP_NEG:
-			return generate_int_unary_operator(expression, closure, OPCODE_NEG, type_space);
-		case OP_MUL:
-			return generate_int_multiplication(expression, closure, type_space);
-		case OP_PLUS:
-			/* basically just transfer expression result to the current one */
-			if (!generate_expression(expression->exp_op.exp1, closure, type_space)) {
-				return false;
-			}
-			variable_t * result = lookup_expression_result(expression->exp_op.exp1, closure, type_space);
-			if (result == NULL) {
-				return false;
-			}
-			result->evaluated_expression = expression;
-			return true;
-		case OP_EQUAL:
-		case OP_NEQUAL:
-		case OP_LESS:
-		case OP_LESS_EQUAL:
-		case OP_GREATER:
-		case OP_GREATER_EQUAL:
-			return generate_int_comparison(expression, closure, expression->exp_op.op, type_space);
-		default:
-			return false;
-	}
-}
+//static bool generate_int_operation(statement_expression_t * expression, closure_t * closure, type_space_t *type_space) {
+//	switch (expression->exp_op.op) {
+//		case OP_ASSIGN:
+//			return generate_int_assignment(expression, closure, type_space);
+//		case OP_ADD:
+//			return generate_int_arithmetic(expression, closure, OPCODE_ADD, type_space);
+//		case OP_BAND:
+//			return generate_int_arithmetic(expression, closure, OPCODE_AND, type_space);
+//		case OP_BOR:
+//			return generate_int_arithmetic(expression, closure, OPCODE_OR, type_space);
+//		case OP_SUB:
+//			return generate_int_arithmetic(expression, closure, OPCODE_SUB, type_space);
+//		case OP_NEG:
+//			return generate_int_unary_operator(expression, closure, OPCODE_NEG, type_space);
+//		case OP_MUL:
+//			return generate_int_multiplication(expression, closure, type_space);
+//		case OP_PLUS:
+//			/* basically just transfer expression result to the current one */
+//			if (!generate_expression(expression->exp_op.exp1, closure, type_space)) {
+//				return false;
+//			}
+//			variable_t * result = lookup_expression_result(expression->exp_op.exp1, closure, type_space);
+//			if (result == NULL) {
+//				return false;
+//			}
+//			result->evaluated_expression = expression;
+//			return true;
+//		case OP_EQUAL:
+//		case OP_NEQUAL:
+//		case OP_LESS:
+//		case OP_LESS_EQUAL:
+//		case OP_GREATER:
+//		case OP_GREATER_EQUAL:
+//			return generate_int_comparison(expression, closure, expression->exp_op.op, type_space);
+//		default:
+//			return false;
+//	}
+//}
 
-static variable_operations_t int_operations = {
-	.generate_operation = &generate_int_operation
-};
-
-variable_t * int_allocate_variable (
-	type_t * this,
-	closure_t *closure,
-	const char * identifier,
-	value_type_e type
+bool generate_int_addition(
+	statement_expression_t * operation,
+	closure_t * closure,
+	type_space_t *type_space
 ) {
-	variable_t * int_var = allocate_variable(closure, identifier, type, this);
-	if (NULL == int_var) {
-		return NULL;
-	}
-
-	int_var->op = &int_operations;
-	return int_var;
-}
+	return generate_int_arithmetic(operation, closure, OPCODE_ADD, type_space);
+};

@@ -3,9 +3,10 @@
 #include <unistd.h>
 #include <stdio.h>
 #include <x86/closure.h>
-#include <types.h>
-#include <type_check.h>
+#include <types/types.h>
+#include <types/type_check.h>
 #include <x86/types/int.h>
+#include <x86/types/pointer.h>
 
 bool generate_expression(statement_expression_t * expression, closure_t * closure, type_space_t *type_space);
 
@@ -93,7 +94,6 @@ static bool load_expression_to_register(
 }
 
 bool generate_expression(statement_expression_t * expression, closure_t * closure, type_space_t *type_space) {
-	variable_t * result = NULL;
 	switch (expression->expression_type) {
 		case EXPRESSION_TYPE_CONST:
 			/* well, the fuck we should do here */
@@ -102,17 +102,25 @@ bool generate_expression(statement_expression_t * expression, closure_t * closur
 			/* same with const.. */
 			break;
 		case EXPRESSION_TYPE_OP:
-			/* TODO: call type's operation */
-			result  = expression->type->allocate_variable(
-				expression->type,
-				closure,
-				NULL,
-				VALUE_TYPE_EXPRESSION_RESULT
-			);
-			if (NULL == result) {
+			if (
+				(expression->exp_op.exp1 != NULL) &&
+				(!generate_expression(expression->exp_op.exp1, closure, type_space))
+			) {
 				return false;
 			}
-			return result->op->generate_operation(expression, closure, type_space);
+			if (
+				(expression->exp_op.exp2 != NULL) &&
+				(!generate_expression(expression->exp_op.exp2, closure, type_space))
+				) {
+				return false;
+			}
+			if (
+				(expression->exp_op.exp3 != NULL) &&
+				(!generate_expression(expression->exp_op.exp3, closure, type_space))
+			) {
+				return false;
+			}
+			return expression->generation_function(expression, closure, type_space);
 	}
 
 	return true;
@@ -550,7 +558,8 @@ bool initialize_type_generation(type_t * added_type) {
 
 	/* test for pointer first */
 	if (added_type->deref_count > 0) {
-		/* TODO: initialize with pointer function */
+		//added_type->allocate_variable = &pointer_allocate_variable;
+		return false;
 	}
 
 	switch (added_type->type) {
@@ -580,14 +589,11 @@ static type_space_t *generate_top_level_type_space() {
 		goto cleanup;
 	}
 
-	/* TODO: add primitive variable allocation function */
-
 	/* initialize primitives */
 	current_primitive = add_primitive(top_level_space, "int", 4);
 	if (NULL == current_primitive) {
 		goto cleanup;
 	}
-	current_primitive->allocate_variable = &int_allocate_variable;
 
 	if (NULL == add_primitive(top_level_space, "char", 1)) {
 		goto cleanup;

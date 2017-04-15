@@ -7,7 +7,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <stddef.h>
-#include <types.h>
+#include <types/types.h>
 
 typedef enum value_type {
 	VALUE_TYPE_PARAMETER,
@@ -52,23 +52,12 @@ typedef struct {
     long stack_offset; // relative to ebp
 } position_t;
 
-typedef struct variable_operations_s {
-
-	bool (*generate_operation)(
-		statement_expression_t * operation,
-		closure_t * closure,
-		type_space_t *type_space
-	);
-
-} variable_operations_t ;
-
 typedef struct variable_s {
     struct variable_s * next;
     value_type_e variable_type;
     position_t position;
     statement_expression_t * evaluated_expression;
 	type_t *type;
-	variable_operations_t *op;
 	const char * variable_name;
 } variable_t;
 
