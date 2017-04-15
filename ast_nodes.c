@@ -17,7 +17,7 @@ statement_expression_t * create_op_expression(
 		goto cleanup;
 	}
 
-	new_stmt->type = EXPRESSION_TYPE_OP;
+	new_stmt->expression_type = EXPRESSION_TYPE_OP;
 	new_stmt->exp_op.op = op;
 	new_stmt->exp_op.exp1 = exp1;
 	new_stmt->exp_op.exp2 = exp2;

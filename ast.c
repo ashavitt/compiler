@@ -10,7 +10,7 @@ const char * operator_type_str[] = {
 	"bitwise xor", "bitwise and", "bitwise or", "logical and", "logical or",
 	"assignment", "unary plus", "unary minus", "equal", "not equal",
 	"bitwise shift right", "bitwise shift left", "less", "greater",
-	"less equal", "greater equal", "ternary condition"
+	"less equal", "greater equal", "ternary condition", "dereference", "reference"
 };
 
 statement_t * create_statement(statement_type_e type)

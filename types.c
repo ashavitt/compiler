@@ -14,16 +14,20 @@ bool is_same_type(
 		type_t *second_type
 ) {
 	/* we assume that typedef lookup and like are done in add_type */
-	if (first_type->size != second_type->size ||
-		first_type->deref_count != second_type->deref_count ||
-		first_type->base_type != second_type->base_type ||
-		first_type->modifier.is_volatile != second_type->modifier.is_volatile ||
-		first_type->modifier.is_register != second_type->modifier.is_register ||
-		first_type->modifier.is_const != second_type->modifier.is_const ||
-		first_type->modifier.is_unsigned != second_type->modifier.is_unsigned ||
-		first_type->type != second_type->type
+	if (
+		(first_type->size != second_type->size) ||
+		(first_type->deref_count != second_type->deref_count) ||
+		(first_type->modifier.is_volatile != second_type->modifier.is_volatile) ||
+		(first_type->modifier.is_register != second_type->modifier.is_register) ||
+		(first_type->modifier.is_const != second_type->modifier.is_const) ||
+		(first_type->modifier.is_unsigned != second_type->modifier.is_unsigned) ||
+		(first_type->type != second_type->type)
 	) {
 		return false;
+	}
+
+	if ((first_type->base_type != NULL) && (second_type->base_type != NULL)) {
+		return is_same_type(type_space, first_type->base_type, second_type->base_type);
 	}
 
 	return true;
@@ -272,14 +276,14 @@ type_t *get_declaration_type(
 	new_type->deref_count = declaration->type.deref_count;
 	new_type->type = declaration->type.type_base;
 	new_type->base_type = NULL;
-	new_type->deref_count = 0;
 
 	/* If we have no modifiers, just return the actual type */
-	if (!new_type->modifier.is_volatile &&
-		!new_type->modifier.is_unsigned &&
-		!new_type->modifier.is_const &&
-		!new_type->modifier.is_register &&
-		new_type->deref_count == 0
+	if (
+		(!new_type->modifier.is_volatile) &&
+		(!new_type->modifier.is_unsigned) &&
+		(!new_type->modifier.is_const) &&
+		(!new_type->modifier.is_register) &&
+		(new_type->deref_count == 0)
 	) {
 		return lookup_type(type_space, declaration->type.type_base_type.identifier);
 	}

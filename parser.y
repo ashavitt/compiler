@@ -208,6 +208,8 @@ expr : TOK_NUMBER { $$ = create_const_expression($1); }
      | expr '%' expr { $$ = create_op_expression(OP_MOD, $1, $3, NULL); }
      | '+' expr { $$ = create_op_expression(OP_PLUS, $2, NULL, NULL); }
      | '-' expr { $$ = create_op_expression(OP_NEG, $2, NULL, NULL); }
+     | '*' expr { $$ = create_op_expression(OP_DREF, $2, NULL, NULL); }
+     | '&' expr { $$ = create_op_expression(OP_REF, $2, NULL, NULL); }
      | '(' expr ')' { $$ = $2; }
      ;
 

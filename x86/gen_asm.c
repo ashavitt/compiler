@@ -113,7 +113,6 @@ bool generate_expression(statement_expression_t * expression, closure_t * closur
 				return false;
 			}
 			return result->op->generate_operation(expression, closure, type_space);
-			break;
 	}
 
 	return true;

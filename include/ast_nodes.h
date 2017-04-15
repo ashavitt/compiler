@@ -47,7 +47,9 @@ enum operator_type
 	OP_GREATER,
 	OP_LESS_EQUAL,
 	OP_GREATER_EQUAL,
-	OP_TERNARY
+	OP_TERNARY,
+	OP_DREF,
+	OP_REF
 };
 
 enum declaration_type_base_e {

@@ -1,14 +1,37 @@
 #include <type_check.h>
 #include <x86/closure.h>
 #include <x86/gen_asm.h>
+#include <memory.h>
 
 static bool is_lvalue(
 	type_space_t *type_space,
 	statement_expression_t *expression
 ) {
-	return expression->expression_type == EXPRESSION_TYPE_IDENTIFIER; /* ||
-		   expression->type == EXPRESSION_TYPE_OP && expression->exp_op.op == OP_DEREF ||
+	return expression->expression_type == EXPRESSION_TYPE_IDENTIFIER ||
+		   expression->expression_type == EXPRESSION_TYPE_OP && expression->exp_op.op == OP_DREF; /* ||
 		   expression->type == EXPRESSION_TYPE_OP && expression->exp_op.op == OP_ARRAY_ACCESS */
+}
+
+static type_t * deref_of(type_t * pointer_type) {
+	type_t * deref_type = malloc(sizeof(*deref_type));
+	if (NULL == deref_type) {
+		return NULL;
+	}
+
+	memcpy(deref_type, pointer_type, sizeof(*deref_type));
+	deref_type->deref_count -= 1;
+	return deref_type;
+}
+
+static type_t * pointer_to(type_t * lvalue_type) {
+	type_t * pointer_type = malloc(sizeof(*pointer_type));
+	if (NULL == pointer_type) {
+		return NULL;
+	}
+
+	memcpy(pointer_type, lvalue_type, sizeof(*pointer_type));
+	pointer_type->deref_count += 1;
+	return pointer_type;
 }
 
 bool type_check_expression(
@@ -95,6 +118,12 @@ bool type_check_expression(
 			/* we don't support conversion yet */
 			return is_same_type(type_space, exp1_type, exp2_type) &&
 				   is_lvalue(type_space, expression->exp_op.exp1);
+		case OP_DREF:
+			expression->type = deref_of(exp1_type);
+			return (exp1_type->deref_count > 0);
+		case OP_REF:
+			expression->type = pointer_to(exp1_type);
+			return is_lvalue(type_space, expression->exp_op.exp1);
 		default:
 			/* unhandled operation */
 			return false;
