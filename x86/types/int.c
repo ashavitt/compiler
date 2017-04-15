@@ -467,3 +467,11 @@ bool generate_int_addition(
 ) {
 	return generate_int_arithmetic(operation, closure, OPCODE_ADD, type_space);
 };
+
+bool generate_int_substraction(
+	statement_expression_t * operation,
+	closure_t * closure,
+	type_space_t *type_space
+) {
+	return generate_int_arithmetic(operation, closure, OPCODE_SUB, type_space);
+};
