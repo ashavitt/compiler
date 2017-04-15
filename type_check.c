@@ -82,11 +82,6 @@ static bool type_check_assigment(
 	type_t *exp1_type = NULL, *exp2_type = NULL;
 
 	/* type check the subexpressions */
-	if ((NULL != expression->exp_op.exp1) &&
-		!type_check_expression(type_space, expression->exp_op.exp1, closure)
-	) {
-		return false;
-	}
 	if (expression->exp_op.exp1 == NULL || expression->exp_op.exp2 == NULL) {
 		return false;
 	}
@@ -107,9 +102,43 @@ static bool type_check_assigment(
 	) {
 		return false;
 	}
-
 	expression->generation_function = generate_int_assignment;
 	return true;
+}
+
+static bool type_check_dref(
+	type_space_t *type_space,
+	statement_expression_t * expression,
+	closure_t *closure
+) {
+	/* type check the subexpressions */
+/*	if ((NULL != expression->exp_op.exp1) &&
+		!type_check_expression(type_space, expression->exp_op.exp1, closure)
+		) {
+		return false;
+	}
+	if (expression->exp_op.exp1 == NULL) {
+		return false;
+	}
+
+	if (!type_check_expression(type_space, expression->exp_op.exp1, closure)) {
+		return false;
+	}
+
+	if (expression->exp_op.exp1->type->deref_count <= 0) {
+		return false;
+	}
+
+	expression->generation_function =*/
+	return false;
+}
+
+static bool type_check_ref(
+	type_space_t *type_space,
+	statement_expression_t * expression,
+	closure_t *closure
+) {
+	return false;
 }
 
 /*
@@ -166,8 +195,8 @@ static bool(*operation_type_checks[])(
 	NULL,
 	NULL,
 	NULL,
-	NULL,
-	NULL
+	type_check_dref,
+	type_check_ref
 };
 
 bool type_check_expression(
