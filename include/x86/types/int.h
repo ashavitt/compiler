@@ -7,7 +7,7 @@ generation_function_t generate_int_assignment;
 generation_function_t generate_int_addition;
 generation_function_t generate_int_multiplication;
 generation_function_t generate_int_division;
-generation_function_t generate_int_substraction;
+generation_function_t generate_int_subtraction;
 generation_function_t generate_int_unary_plus;
 generation_function_t generate_int_not_equal;
 generation_function_t generate_int_equal;
