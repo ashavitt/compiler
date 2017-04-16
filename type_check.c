@@ -43,12 +43,7 @@ static bool type_check_add(
 	type_t *exp1_type = NULL, *exp2_type = NULL;
 
 	/* type check the subexpressions */
-	if ((NULL != expression->exp_op.exp1) &&
-		!type_check_expression(type_space, expression->exp_op.exp1, closure)
-	) {
-		return false;
-	}
-	if (expression->exp_op.exp1 != NULL || expression->exp_op.exp2 != NULL) {
+	if ((NULL == expression->exp_op.exp1) || (NULL == expression->exp_op.exp2)) {
 		return false;
 	}
 
@@ -70,6 +65,8 @@ static bool type_check_add(
 		return false;
 	}
 
+	/* set the type of the expression */
+	expression->type = expression->exp_op.exp1->type;
 	expression->generation_function = generate_int_addition;
 	return true;
 }
@@ -81,7 +78,8 @@ static bool type_check_equal(
 ) {
 	type_t *exp1_type = NULL, *exp2_type = NULL;
 
-	if (expression->exp_op.exp1 != NULL || expression->exp_op.exp2 != NULL) {
+	/* type check the subexpressions */
+	if ((NULL == expression->exp_op.exp1) || (NULL == expression->exp_op.exp2)) {
 		return false;
 	}
 
@@ -103,6 +101,8 @@ static bool type_check_equal(
 		return false;
 	}
 
+	/* set the type of the expression */
+	expression->type = expression->exp_op.exp1->type;
 	expression->generation_function = generate_int_equal;
 	return true;
 }
@@ -115,7 +115,7 @@ static bool type_check_assigment(
 	type_t *exp1_type = NULL, *exp2_type = NULL;
 
 	/* type check the subexpressions */
-	if (expression->exp_op.exp1 == NULL || expression->exp_op.exp2 == NULL) {
+	if ((NULL == expression->exp_op.exp1) || (NULL == expression->exp_op.exp2)) {
 		return false;
 	}
 
@@ -135,6 +135,8 @@ static bool type_check_assigment(
 	) {
 		return false;
 	}
+	/* set the type of the expression */
+	expression->type = expression->exp_op.exp1->type;
 	expression->generation_function = generate_int_assignment;
 	return true;
 }

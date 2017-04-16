@@ -111,7 +111,7 @@ bool generate_expression(statement_expression_t * expression, closure_t * closur
 			if (
 				(expression->exp_op.exp2 != NULL) &&
 				(!generate_expression(expression->exp_op.exp2, closure, type_space))
-				) {
+			) {
 				return false;
 			}
 			if (
@@ -338,11 +338,12 @@ bool parse_block(code_block_t * code_block, closure_t * closure, type_space_t *t
 	statement_t * current_statement = code_block->first_line;
 	type_space_t * new_block_space = create_empty_type_space(type_space);
 	if (NULL == new_block_space) {
-		printf("Failed allocating new type space");
+		printf("Failed allocating new type space\n");
 		return false;
 	}
 
 	if (!type_check_block(new_block_space, code_block, closure)) {
+		printf("Failed type checking block\n");
 		return false;
 	}
 

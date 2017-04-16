@@ -106,10 +106,6 @@ bool generate_int_assignment(
 
 	memset(node, 0, sizeof(*node));
 	if (assignment->exp1->expression_type == EXPRESSION_TYPE_IDENTIFIER) {
-		if(!generate_expression(assignment->exp2, closure, type_space)) {
-			return false;
-		}
-
 		if (!load_int_expression_to_register(assignment->exp2, closure, REGISTER_EAX, type_space)) {
 			return false;
 		}
@@ -144,14 +140,6 @@ static bool generate_int_arithmetic(
 	if (NULL == node_op) {
 		success = false;
 		goto cleanup;
-	}
-
-	if(!generate_expression(arithmetic_expression->exp1, closure, type_space)) {
-		return false;
-	}
-
-	if(!generate_expression(arithmetic_expression->exp2, closure, type_space)) {
-		return false;
 	}
 
 	if (!load_int_expression_to_register(arithmetic_expression->exp1, closure, REGISTER_EAX, type_space)) {
@@ -209,10 +197,6 @@ static bool generate_int_unary_operator(
 		goto cleanup;
 	}
 
-	if(!generate_expression(expression->exp_op.exp1, closure, type_space)) {
-		goto cleanup;
-	}
-
 	if (!load_int_expression_to_register(expression->exp_op.exp1, closure, REGISTER_EAX, type_space))
 	{
 		goto cleanup;
@@ -253,14 +237,6 @@ bool generate_int_multiplication(
 	/* TODO: fix when there are conversions */
 	result = allocate_variable(closure, NULL, VALUE_TYPE_EXPRESSION_RESULT, expression->exp_op.exp1->type);
 	if (NULL == result) {
-		return false;
-	}
-
-	if (!generate_expression(expression->exp_op.exp1, closure, type_space)) {
-		return false;
-	}
-
-	if (!generate_expression(expression->exp_op.exp2, closure, type_space)) {
 		return false;
 	}
 
@@ -313,16 +289,6 @@ static bool generate_int_comparison(
 	}
 
 	/* compute the operands first */
-	if (!generate_expression(comparison_expression->exp1, closure, type_space)) {
-		success = false;
-		return false;
-	}
-
-	if (!generate_expression(comparison_expression->exp2, closure, type_space)) {
-		success = false;
-		return false;
-	}
-
 	if (!load_int_expression_to_register(comparison_expression->exp1, closure, REGISTER_EAX, type_space)) {
 		success = false;
 		goto cleanup;
